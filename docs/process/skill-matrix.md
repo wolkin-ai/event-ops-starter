@@ -2,6 +2,7 @@
 
 | Skill                      | Role                               | Trigger                                          |
 | -------------------------- | ---------------------------------- | ------------------------------------------------ |
+| `starter-orientation`      | Repository onboarding and doc map  | Onboarding, repo walkthrough, startup guidance   |
 | `safe-change-flow`         | Safe execution guardrails          | Any code or config change                        |
 | `define-domain-language`   | L1/L2 naming and glossary work     | Domain naming, contract cards                    |
 | `story-ui-spec`            | Storybook-first slice spec         | New UI state or story work                       |

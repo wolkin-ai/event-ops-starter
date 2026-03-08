@@ -8,6 +8,8 @@ It is also intended to work as a template repository for future projects. New pr
 
 Before evolving the sample into a real product, review `docs/process/harness-engineering-gap-checklist.md` and explicitly decide which missing harness layers must be adopted.
 
+When someone needs a reading map or onboarding path, start from `docs/process/starter-guide.md` and `docs/process/team-starter-kit.md`.
+
 ## Roles
 
 - Codex owns domain language, application logic, review strategy, and specialist reviews.

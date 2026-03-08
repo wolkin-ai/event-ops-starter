@@ -5,6 +5,12 @@ export const coreSkills = [
     aliases: ['ai-safe-implementation-flow'],
   },
   {
+    name: 'starter-orientation',
+    description:
+      'repo の全体像、読む順番、運用導線を案内する onboarding skill。',
+    aliases: ['starter-guide', 'onboarding-guide'],
+  },
+  {
     name: 'define-domain-language',
     description: 'L1/L2 語彙の固定と glossary 更新を支援する skill。',
     aliases: [],

@@ -129,6 +129,8 @@ Use the current repository as a standalone template by default. Move to the mono
 
 ## Harness maturity docs
 
+- [Starter guide](./docs/process/starter-guide.md)
+- [Team starter kit](./docs/process/team-starter-kit.md)
 - [Boundary validation](./docs/process/boundary-validation.md)
 - [Local observability](./docs/process/local-observability.md)
 - [Quality score](./docs/process/quality-score.md)
