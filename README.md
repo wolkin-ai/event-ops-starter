@@ -40,6 +40,7 @@ Do not copy this starter into an existing product repository. Mixing sample code
 If a future product needs a monorepo, start with this starter inside `apps/web` from day one instead of moving files later.
 
 See [docs/process/starting-a-new-project.md](./docs/process/starting-a-new-project.md) for the concrete handoff sequence.
+Use [docs/process/harness-engineering-gap-checklist.md](./docs/process/harness-engineering-gap-checklist.md) to evaluate what should be added before a new product scales beyond the sample harness.
 
 ## Key commands
 

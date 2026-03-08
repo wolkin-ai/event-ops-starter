@@ -6,6 +6,8 @@ This repository is a standalone, AI-ready starter for a public event experience 
 
 It is also intended to work as a template repository for future projects. New products should start from a fresh repository created from this starter, not by copying files into an existing product repository.
 
+Before evolving the sample into a real product, review `docs/process/harness-engineering-gap-checklist.md` and explicitly decide which missing harness layers must be adopted.
+
 ## Roles
 
 - Codex owns domain language, application logic, review strategy, and specialist reviews.
