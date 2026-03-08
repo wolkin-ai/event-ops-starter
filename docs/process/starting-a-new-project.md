@@ -15,10 +15,11 @@ Do not copy these files into an already-running repository. That path usually br
 1. Create a new repository from this template repository.
 2. Clone it into a fresh folder.
 3. Review `docs/process/harness-engineering-gap-checklist.md` and mark the gaps that matter for the new product.
-4. Rename the package, app name, product copy, and domain glossary.
-5. Keep `CLAUDE.md`, `docs/adr`, `skills/core`, `bin`, `scripts`, `.storybook`, and verification commands.
-6. Replace sample bounded contexts one by one instead of rewriting the whole tree at once.
-7. Add new ports only when the product boundary is clear and documented.
+4. Copy the current `quality-score` and `tech-debt-tracker` files so the new product starts with an explicit baseline.
+5. Rename the package, app name, product copy, and domain glossary.
+6. Keep `CLAUDE.md`, `docs/adr`, `skills/core`, `bin`, `scripts`, `.storybook`, and verification commands.
+7. Replace sample bounded contexts one by one instead of rewriting the whole tree at once.
+8. Add new ports only when the product boundary is clear and documented.
 
 ## What to keep
 

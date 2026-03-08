@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -32,11 +34,5 @@ jobs:
       - name: Run verification gates
         run: npm run verify:all
 
-      - name: Run architecture review
-        run: npm run review:architecture -- src
-
-      - name: Run security review
-        run: npm run review:security -- src
-
-      - name: Run performance review
-        run: npm run review:performance -- src
+      - name: Run review suite
+        run: npm run review:suite

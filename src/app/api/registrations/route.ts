@@ -1,8 +1,13 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createRegistrationServices } from '@/composition/registration';
 import { createSessionServices } from '@/composition/session';
+import {
+  createRouteContext,
+  handleRouteError,
+  jsonResponse,
+  readRequestJson,
+} from '@/lib/http/route-contract';
 
 const createRegistrationSchema = z.object({
   eventId: z.string().trim().min(1),
@@ -13,9 +18,20 @@ const createRegistrationSchema = z.object({
   notes: z.string().trim(),
 });
 
+const createRegistrationResponseSchema = z.object({
+  id: z.string().min(1),
+  reference: z.string().min(1),
+});
+
 export async function POST(request: Request) {
+  const context = createRouteContext(request, 'api.registrations.create');
+
   try {
-    const input = createRegistrationSchema.parse(await request.json());
+    const input = await readRequestJson(
+      request,
+      createRegistrationSchema,
+      context,
+    );
     const { createRegistration } = createRegistrationServices();
     const { issueSession } = createSessionServices();
     const registration = await createRegistration.execute(input);
@@ -24,7 +40,9 @@ export async function POST(request: Request) {
       email: registration.attendeeEmail,
       role: 'attendee',
     });
-    const response = NextResponse.json(
+    const response = jsonResponse(
+      context,
+      createRegistrationResponseSchema,
       {
         id: registration.id,
         reference: registration.id.slice(0, 8).toUpperCase(),
@@ -36,9 +54,10 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Registration failed.';
-
-    return NextResponse.json({ error: message }, { status: 400 });
+    return handleRouteError(context, error, {
+      fallbackMessage: 'Registration failed.',
+      expectedStatus: 400,
+      expectedCode: 'registration_failed',
+    });
   }
 }

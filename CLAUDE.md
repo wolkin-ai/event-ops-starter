@@ -43,8 +43,9 @@ React work is split into:
 3. Contract card update
 4. Domain/use case tests
 5. Implementation
-6. Storybook review
-7. Codex specialist review
+6. Boundary validation and route contract check
+7. Storybook review
+8. Codex specialist review
 
 ## Verification
 
@@ -61,6 +62,7 @@ npm run format:check
 npm run db:prepare
 npm run lint
 npm run skills:validate
+npm run cleanup:check
 npm run arch:check
 npm run typecheck
 npm run test
@@ -78,6 +80,7 @@ Use `npm run db:reset-local` only when local Prisma state is no longer compatibl
 - Canonical skills live in `skills/core/<skill-name>/SKILL.md`.
 - Claude adapters are generated into `.claude/skills`.
 - Alias names are allowed only through the project registry.
+- Do not bypass project-local review scripts or route-contract helpers when equivalent project rules already exist.
 
 ## Auth And Data
 
@@ -93,6 +96,19 @@ Use `npm run db:reset-local` only when local Prisma state is no longer compatibl
 - Registrations and public routes depend on live publication state, not on plan existence alone.
 - Market-facing copy belongs to `EventPublication` and must not mutate `EventPlan` fields implicitly.
 
+## Boundary Validation
+
+- Route handlers must validate request JSON through shared helpers.
+- Route handlers must validate success payloads before returning them.
+- Error payloads must include `code` and `requestId`.
+- New external adapters must validate provider-facing input and output at the infrastructure boundary.
+
+## Local Observability
+
+- Local inspection starts with structured logs and `requestId`, not with an external logging backend.
+- Use `LOG_LEVEL=debug` only when inspecting runtime behavior locally.
+- Keep local observability self-contained. Do not require hosted metrics, tracing, or log infrastructure to boot the app.
+
 ## Guardrails
 
 - Do not reintroduce runtime seed calls inside repository adapters.
@@ -102,6 +118,8 @@ Use `npm run db:reset-local` only when local Prisma state is no longer compatibl
 - New external services must ship with either a local adapter or an emulator story before becoming required for development.
 - When starting a new product, preserve `docs/`, `skills/`, `bin/`, verification scripts, and review wrappers before replacing sample domains or UI copy.
 - Do not blend this starter into an existing repository unless you intentionally adopt a monorepo layout with `apps/web` as the boundary.
+- Keep `docs/process/quality-score.md` and `docs/process/tech-debt-tracker.md` current when harness maturity changes.
+- Do not reintroduce tracked sample assets or generated review artifacts into the repository.
 
 ## Review Commands
 
@@ -110,6 +128,7 @@ Use `npm run db:reset-local` only when local Prisma state is no longer compatibl
 ./bin/codex-review security src
 ./bin/codex-review performance src
 ./bin/codex-review investigate src
+npm run review:suite
 ```
 
 Set `CODEX_REVIEW_EXEC=1` only when you want the wrapper to call the Codex agent directly.

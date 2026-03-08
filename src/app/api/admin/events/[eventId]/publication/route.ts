@@ -1,8 +1,14 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createAdminEventServices } from '@/composition/admin-events';
 import { createSessionServices } from '@/composition/session';
+import {
+  createRouteContext,
+  errorResponse,
+  handleRouteError,
+  jsonResponse,
+  readRequestJson,
+} from '@/lib/http/route-contract';
 
 interface PublicationRouteContext {
   readonly params: Promise<{
@@ -22,23 +28,53 @@ const updatePublicationSchema = z.object({
   operatorNotes: z.array(z.string()).min(1),
 });
 
-async function requireAdminSession() {
+const publicationResponseSchema = z.object({
+  eventId: z.string().min(1),
+  slug: z.string().min(1),
+  publicationStatus: z.enum(['published', 'unpublished']),
+  title: z.string().min(1),
+  summary: z.string().min(1),
+  heroEyebrow: z.string().min(1),
+  heroBlurb: z.string().min(1),
+  audience: z.string().min(1),
+  trackLabel: z.string().min(1),
+  highlights: z.array(z.string()),
+  operatorNotes: z.array(z.string()),
+  seatsTotal: z.number().int(),
+  seatsRemaining: z.number().int(),
+  city: z.string().min(1),
+  venue: z.string().min(1),
+  startsAt: z.string().min(1),
+});
+
+const publicationActionResponseSchema = z.object({
+  id: z.string().min(1),
+  publicationStatus: z.enum(['published', 'unpublished']),
+});
+
+async function requireAdminSession(
+  routeContext: ReturnType<typeof createRouteContext>,
+) {
   const { getCurrentSession } = createSessionServices();
   const session = await getCurrentSession.execute();
 
   if (!session || session.role !== 'admin') {
-    return NextResponse.json(
-      { error: 'Admin session required.' },
-      { status: 403 },
-    );
+    return errorResponse(routeContext, {
+      status: 403,
+      code: 'admin_session_required',
+      message: 'Admin session required.',
+    });
   }
 
   return null;
 }
 
 export async function GET(request: Request, context: PublicationRouteContext) {
-  void request;
-  const unauthorized = await requireAdminSession();
+  const routeContext = createRouteContext(
+    request,
+    'api.admin.events.publication.get',
+  );
+  const unauthorized = await requireAdminSession(routeContext);
 
   if (unauthorized) {
     return unauthorized;
@@ -49,18 +85,22 @@ export async function GET(request: Request, context: PublicationRouteContext) {
   const publication = await getAdminEventPublication.execute(eventId);
 
   if (!publication) {
-    return NextResponse.json(
-      { error: 'Event publication not found.' },
-      { status: 404 },
-    );
+    return errorResponse(routeContext, {
+      status: 404,
+      code: 'event_publication_not_found',
+      message: 'Event publication not found.',
+    });
   }
 
-  return NextResponse.json(publication);
+  return jsonResponse(routeContext, publicationResponseSchema, publication);
 }
 
 export async function POST(request: Request, context: PublicationRouteContext) {
-  void request;
-  const unauthorized = await requireAdminSession();
+  const routeContext = createRouteContext(
+    request,
+    'api.admin.events.publication.publish',
+  );
+  const unauthorized = await requireAdminSession(routeContext);
 
   if (unauthorized) {
     return unauthorized;
@@ -71,15 +111,16 @@ export async function POST(request: Request, context: PublicationRouteContext) {
     const { publishAdminEvent } = createAdminEventServices();
     const event = await publishAdminEvent.execute(eventId);
 
-    return NextResponse.json({
+    return jsonResponse(routeContext, publicationActionResponseSchema, {
       id: event.id,
       publicationStatus: event.publicationStatus,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Event publication failed.';
-
-    return NextResponse.json({ error: message }, { status: 400 });
+    return handleRouteError(routeContext, error, {
+      fallbackMessage: 'Event publication failed.',
+      expectedStatus: 400,
+      expectedCode: 'event_publication_failed',
+    });
   }
 }
 
@@ -87,8 +128,11 @@ export async function DELETE(
   request: Request,
   context: PublicationRouteContext,
 ) {
-  void request;
-  const unauthorized = await requireAdminSession();
+  const routeContext = createRouteContext(
+    request,
+    'api.admin.events.publication.withdraw',
+  );
+  const unauthorized = await requireAdminSession(routeContext);
 
   if (unauthorized) {
     return unauthorized;
@@ -99,22 +143,25 @@ export async function DELETE(
     const { unpublishAdminEvent } = createAdminEventServices();
     const event = await unpublishAdminEvent.execute(eventId);
 
-    return NextResponse.json({
+    return jsonResponse(routeContext, publicationActionResponseSchema, {
       id: event.id,
       publicationStatus: event.publicationStatus,
     });
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : 'Event publication withdrawal failed.';
-
-    return NextResponse.json({ error: message }, { status: 400 });
+    return handleRouteError(routeContext, error, {
+      fallbackMessage: 'Event publication withdrawal failed.',
+      expectedStatus: 400,
+      expectedCode: 'event_publication_withdraw_failed',
+    });
   }
 }
 
 export async function PUT(request: Request, context: PublicationRouteContext) {
-  const unauthorized = await requireAdminSession();
+  const routeContext = createRouteContext(
+    request,
+    'api.admin.events.publication.update',
+  );
+  const unauthorized = await requireAdminSession(routeContext);
 
   if (unauthorized) {
     return unauthorized;
@@ -122,20 +169,29 @@ export async function PUT(request: Request, context: PublicationRouteContext) {
 
   try {
     const { eventId } = await context.params;
-    const body = updatePublicationSchema.parse(await request.json());
+    const body = await readRequestJson(
+      request,
+      updatePublicationSchema,
+      routeContext,
+    );
 
     if (body.eventId !== eventId) {
-      return NextResponse.json({ error: 'EventId mismatch.' }, { status: 400 });
+      return errorResponse(routeContext, {
+        status: 400,
+        code: 'event_id_mismatch',
+        message: 'EventId mismatch.',
+      });
     }
 
     const { updateAdminEventPublication } = createAdminEventServices();
     const publication = await updateAdminEventPublication.execute(body);
 
-    return NextResponse.json(publication);
+    return jsonResponse(routeContext, publicationResponseSchema, publication);
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Publication update failed.';
-
-    return NextResponse.json({ error: message }, { status: 400 });
+    return handleRouteError(routeContext, error, {
+      fallbackMessage: 'Publication update failed.',
+      expectedStatus: 400,
+      expectedCode: 'publication_update_failed',
+    });
   }
 }

@@ -12,6 +12,7 @@ Event Ops Starter is a standalone Next.js starter for teams that need both a pub
 - `admin plan` と `public publication` を分けたローカル完結モデル
 - Storybook, Vitest, Playwright, dependency-cruiser
 - Project-local skills and Codex review wrappers
+- Structured API logs, request IDs, cleanup checks, and review suite policies
 
 ## Quick start
 
@@ -52,6 +53,8 @@ npm run storybook
 npm run test
 npm run test-storybook
 npm run test:e2e
+npm run cleanup:check
+npm run review:suite
 npm run review:architecture -- src
 ```
 
@@ -67,6 +70,7 @@ cp .env.example .env
 
 - `DATABASE_URL` defaults to `file:./dev.db`
 - `SESSION_SECRET` signs the demo session cookie
+- `LOG_LEVEL` controls structured local logging (`info` by default, `debug` when inspecting route behavior)
 
 ## Local-first rules
 
@@ -77,6 +81,8 @@ cp .env.example .env
 - market-facing copy は EventPublication 側で編集し、EventPlan に逆流させない
 - 認証は session feature 経由で扱い、page や route が cookie 実装に固定されない
 - 新しい外部依存を足すときは、local adapter か emulator 方針を同時に用意する
+- route handler の request/response は共通 boundary helper を通して検証する
+- API error payload は `code` と `requestId` を持つ
 
 ## Structure
 
@@ -120,3 +126,11 @@ new-product/
 ```
 
 Use the current repository as a standalone template by default. Move to the monorepo pattern only when multiple deployable apps or shared internal packages are already expected.
+
+## Harness maturity docs
+
+- [Boundary validation](./docs/process/boundary-validation.md)
+- [Local observability](./docs/process/local-observability.md)
+- [Quality score](./docs/process/quality-score.md)
+- [Tech debt tracker](./docs/process/tech-debt-tracker.md)
+- [Parallel agent worktrees](./docs/process/parallel-agent-worktrees.md)

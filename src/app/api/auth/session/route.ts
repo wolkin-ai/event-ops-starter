@@ -1,7 +1,12 @@
-import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createSessionServices } from '@/composition/session';
+import {
+  createRouteContext,
+  handleRouteError,
+  jsonResponse,
+  readRequestJson,
+} from '@/lib/http/route-contract';
 
 const sessionSchema = z.object({
   name: z.string().trim().min(2),
@@ -31,16 +36,26 @@ function resolveRedirectPath(
   return role === 'admin' ? '/admin' : '/dashboard';
 }
 
+const createSessionResponseSchema = z.object({
+  redirectTo: z.string().min(1),
+});
+
+const clearSessionResponseSchema = z.object({
+  success: z.literal(true),
+});
+
 export async function POST(request: Request) {
+  const context = createRouteContext(request, 'api.auth.session.create');
+
   try {
-    const body = sessionSchema.parse(await request.json());
+    const body = await readRequestJson(request, sessionSchema, context);
     const { issueSession } = createSessionServices();
     const cookie = await issueSession.execute({
       name: body.name,
       email: body.email,
       role: body.role,
     });
-    const response = NextResponse.json({
+    const response = jsonResponse(context, createSessionResponseSchema, {
       redirectTo: resolveRedirectPath(body.role, body.nextPath),
     });
 
@@ -48,17 +63,21 @@ export async function POST(request: Request) {
 
     return response;
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Failed to create session.';
-
-    return NextResponse.json({ error: message }, { status: 400 });
+    return handleRouteError(context, error, {
+      fallbackMessage: 'Failed to create session.',
+      expectedStatus: 400,
+      expectedCode: 'session_create_failed',
+    });
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  const context = createRouteContext(request, 'api.auth.session.clear');
   const { clearSession } = createSessionServices();
   const cookie = await clearSession.execute();
-  const response = NextResponse.json({ success: true });
+  const response = jsonResponse(context, clearSessionResponseSchema, {
+    success: true,
+  });
 
   response.cookies.set(cookie.name, cookie.value, cookie.options);
 

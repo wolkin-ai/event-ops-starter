@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
@@ -122,6 +122,8 @@ async function main() {
       report = JSON.parse(raw);
     } catch (error) {
       report = createFallbackReport(type, targetPaths, error);
+    } finally {
+      await unlink(tempOutputPath).catch(() => undefined);
     }
   } else {
     report = {
@@ -139,6 +141,10 @@ async function main() {
 
   console.log(`JSON report: ${jsonPath}`);
   console.log(`Markdown report: ${markdownPath}`);
+
+  if (process.env.REVIEW_FAIL_ON_BLOCKING === '1' && report.blocking === true) {
+    process.exitCode = 1;
+  }
 }
 
 main().catch((error) => {
