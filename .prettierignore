@@ -1,0 +1,7 @@
+.next
+coverage
+docs/reports/generated
+node_modules
+playwright-report
+src/generated/prisma
+storybook-static

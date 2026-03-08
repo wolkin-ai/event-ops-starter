@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model EventPlan {
+  id            String           @id
+  slug          String           @unique
+  title         String
+  city          String
+  venue         String
+  startsAt      DateTime
+  endsAt        DateTime
+  timezone      String
+  capacity      Int
+  track         String
+  status        String
+  summary       String
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  publication   EventPublication?
+  registrations Registration[]
+}
+
+model EventPublication {
+  eventPlanId     String    @id
+  slug            String    @unique
+  title           String
+  summary         String
+  city            String
+  venue           String
+  heroEyebrow     String
+  heroBlurb       String
+  audience        String
+  trackLabel      String
+  seatsTotal      Int
+  seatsRemaining  Int
+  status          String
+  highlights      String
+  operatorNotes   String
+  startsAt        DateTime
+  endsAt          DateTime
+  timezone        String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  eventPlan       EventPlan @relation(fields: [eventPlanId], references: [id], onDelete: Cascade)
+}
+
+model Registration {
+  id             String    @id
+  eventPlanId     String
+  attendeeName   String
+  attendeeEmail  String
+  company        String
+  seatCount      Int
+  notes          String
+  status         String
+  createdAt      DateTime @default(now())
+  eventPlan      EventPlan @relation(fields: [eventPlanId], references: [id], onDelete: Cascade)
+
+  @@index([attendeeEmail])
+}

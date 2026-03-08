@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      DATABASE_URL: file:./dev.db
+      SESSION_SECRET: ci-session-secret
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run verification gates
+        run: npm run verify:all
+
+      - name: Run architecture review
+        run: npm run review:architecture -- src
+
+      - name: Run security review
+        run: npm run review:security -- src
+
+      - name: Run performance review
+        run: npm run review:performance -- src

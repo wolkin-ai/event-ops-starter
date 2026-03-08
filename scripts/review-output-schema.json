@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reviewType", "targetPaths", "summary", "blocking", "findings"],
+  "properties": {
+    "reviewType": {
+      "type": "string"
+    },
+    "targetPaths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "summary": {
+      "type": "string"
+    },
+    "blocking": {
+      "type": "boolean"
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "file", "line", "summary"],
+        "properties": {
+          "severity": {
+            "type": "string"
+          },
+          "file": {
+            "type": "string"
+          },
+          "line": {
+            "type": ["integer", "null"]
+          },
+          "summary": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
