@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import type { AdminEvent } from '@/features/admin-events/domain/entities/admin-event';
 import type { EventPlan, EventPublication } from '@/generated/prisma/client';
 
 import {
+  buildEventPlanRecordFromAdminEvent,
+  buildEventPublicationRecordFromPlan,
   toAdminEvent,
   toAdminEventPublication,
   toPublicEvent,
@@ -56,6 +59,26 @@ function buildEventPlan(overrides: Partial<EventPlan> = {}): EventPlan {
   };
 }
 
+function buildAdminEvent(
+  overrides: Partial<AdminEvent> = {},
+): AdminEvent {
+  return {
+    id: 'event-1',
+    title: 'Operator Summit',
+    slug: 'operator-summit',
+    city: 'Tokyo',
+    venue: 'Station Hall',
+    startsAt: '2026-06-10T01:00:00.000Z',
+    capacity: 120,
+    track: 'Operations',
+    summary: 'Runbooks for community operators.',
+    status: 'draft',
+    publicationStatus: 'unpublished',
+    createdAt: '2026-03-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
 describe('event-records', () => {
   it('maps valid publication records into a public event', () => {
     const publicEvent = toPublicEvent(buildEventPublication());
@@ -75,7 +98,17 @@ describe('event-records', () => {
     ).toThrow('Event publication status is invalid for catalog projection.');
   });
 
-  it('fails fast when a serialized string list is malformed', () => {
+  it('fails fast when serialized publication JSON is malformed', () => {
+    expect(() =>
+      toAdminEventPublication(
+        buildEventPublication({
+          highlights: '{',
+        }),
+      ),
+    ).toThrow('Event publication highlights must be valid JSON.');
+  });
+
+  it('fails fast when a serialized string list has the wrong shape', () => {
     expect(() =>
       toAdminEventPublication(
         buildEventPublication({
@@ -104,5 +137,48 @@ describe('event-records', () => {
         },
       }),
     ).toThrow('Event publication status is invalid for admin projection.');
+  });
+
+  it('fails fast when persisting an admin plan with an invalid status', () => {
+    const invalidAdminEvent = JSON.parse(
+      JSON.stringify({
+        ...buildAdminEvent(),
+        status: 'published',
+      }),
+    );
+
+    expect(() =>
+      buildEventPlanRecordFromAdminEvent(invalidAdminEvent),
+    ).toThrow('Event plan status is invalid for persistence.');
+  });
+
+  it('fails fast when building a publication record from an invalid plan status', () => {
+    expect(() =>
+      buildEventPublicationRecordFromPlan(
+        buildEventPlan({
+          status: 'published',
+        }),
+      ),
+    ).toThrow('Event plan status is invalid for persistence.');
+  });
+
+  it('fails fast when building a publication record from an invalid publication status', () => {
+    expect(() =>
+      buildEventPublicationRecordFromPlan(buildEventPlan(), {
+        existingPublication: buildEventPublication({
+          status: 'archived',
+        }),
+      }),
+    ).toThrow('Event publication status is invalid for persistence.');
+  });
+
+  it('fails fast when building a publication record from malformed publication JSON', () => {
+    expect(() =>
+      buildEventPublicationRecordFromPlan(buildEventPlan(), {
+        existingPublication: buildEventPublication({
+          highlights: '{',
+        }),
+      }),
+    ).toThrow('Event publication highlights must be valid JSON.');
   });
 });

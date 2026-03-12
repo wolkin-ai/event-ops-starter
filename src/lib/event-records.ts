@@ -136,7 +136,11 @@ export function buildEventPlanRecordFromAdminEvent(event: AdminEvent) {
     timezone: DEFAULT_TIMEZONE,
     capacity: event.capacity,
     track: event.track,
-    status: event.status,
+    status: validateValue(
+      adminEventStatusSchema,
+      event.status,
+      'Event plan status is invalid for persistence.',
+    ),
     summary: event.summary,
     createdAt: new Date(event.createdAt),
   };
@@ -205,15 +209,44 @@ export function buildEventPublicationRecordFromPlan(
     | 'timezone'
     | 'capacity'
     | 'track'
+    | 'status'
   >,
   options: {
     readonly existingPublication?: EventPublication | null;
     readonly reservedSeats?: number;
   } = {},
 ) {
+  validateValue(
+    adminEventStatusSchema,
+    event.status,
+    'Event plan status is invalid for persistence.',
+  );
+
   const reservedSeats = options.reservedSeats ?? 0;
   const seatsRemaining = Math.max(event.capacity - reservedSeats, 0);
   const existingPublication = options.existingPublication ?? null;
+  let existingHighlights: string | null = null;
+  let existingOperatorNotes: string | null = null;
+
+  if (existingPublication) {
+    validateValue(
+      eventPublicationStatusSchema,
+      existingPublication.status,
+      'Event publication status is invalid for persistence.',
+    );
+    existingHighlights = serializeList(
+      deserializeList(
+        existingPublication.highlights,
+        'Event publication highlights',
+      ),
+    );
+    existingOperatorNotes = serializeList(
+      deserializeList(
+        existingPublication.operatorNotes,
+        'Event publication operator notes',
+      ),
+    );
+  }
 
   return {
     eventPlanId: event.id,
@@ -235,14 +268,14 @@ export function buildEventPublicationRecordFromPlan(
     seatsRemaining,
     status: seatsRemaining === 0 ? 'sold_out' : 'scheduled',
     highlights:
-      existingPublication?.highlights ??
+      existingHighlights ??
       serializeList([
         `${event.track} format`,
         `${event.city} operating playbook`,
         `${event.capacity} total seats`,
       ]),
     operatorNotes:
-      existingPublication?.operatorNotes ??
+      existingOperatorNotes ??
       serializeList([
         'Published explicitly from the admin control room.',
         'Keep public copy synchronized through the publication flow.',

@@ -115,6 +115,8 @@ export class PrismaAdminEventRepository implements AdminEventRepository {
         throw new Error('Admin event not found.');
       }
 
+      toAdminEvent(event);
+
       if (!event.publication || event.publication.status === 'draft') {
         throw new Error('Event publication is already withdrawn.');
       }
@@ -168,17 +170,33 @@ export class PrismaAdminEventRepository implements AdminEventRepository {
       );
     }
 
+    toAdminEventPublication(existingPublication);
+
+    const nextPublication = {
+      ...existingPublication,
+      title: publication.title,
+      summary: publication.summary,
+      heroEyebrow: publication.heroEyebrow,
+      heroBlurb: publication.heroBlurb,
+      audience: publication.audience,
+      trackLabel: publication.trackLabel,
+      highlights: JSON.stringify(publication.highlights),
+      operatorNotes: JSON.stringify(publication.operatorNotes),
+    };
+
+    toAdminEventPublication(nextPublication);
+
     const updatedPublication = await prisma.eventPublication.update({
       where: { eventPlanId: publication.eventId },
       data: {
-        title: publication.title,
-        summary: publication.summary,
-        heroEyebrow: publication.heroEyebrow,
-        heroBlurb: publication.heroBlurb,
-        audience: publication.audience,
-        trackLabel: publication.trackLabel,
-        highlights: JSON.stringify(publication.highlights),
-        operatorNotes: JSON.stringify(publication.operatorNotes),
+        title: nextPublication.title,
+        summary: nextPublication.summary,
+        heroEyebrow: nextPublication.heroEyebrow,
+        heroBlurb: nextPublication.heroBlurb,
+        audience: nextPublication.audience,
+        trackLabel: nextPublication.trackLabel,
+        highlights: nextPublication.highlights,
+        operatorNotes: nextPublication.operatorNotes,
       },
     });
 
