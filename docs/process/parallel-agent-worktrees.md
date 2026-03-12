@@ -47,11 +47,28 @@ Pass `--host` only when the machine already has a bindable loopback alias or ano
 
 Some runtimes reject shared `node_modules` symlinks, and shared installs weaken worktree isolation when dependencies diverge by branch.
 
+## Minimum repo policy
+
+`npm run worktree:policy` checks only harness-managed worktrees recorded in `.git/codex-worktree-harness/state.json`.
+
+It fails when:
+
+- a managed worktree points at the canonical root path or canonical root branch
+- a managed worktree path is missing from `git worktree list --porcelain`
+- a managed worktree branch in harness metadata does not match the branch attached to that worktree path
+- two managed worktrees reuse the same branch
+- two managed worktrees reuse the same path
+- two managed worktrees reuse the same runtime endpoint (`host + port`) across app or Storybook
+
+This scope is intentionally narrow for now.
+
+Manual `git worktree add` usage that is not recorded by the harness is still out of scope.
+
 ## Merge discipline
 
 1. Keep changes scoped to one slice.
 2. Run `npm run verify:all` in that worktree before merge.
-3. `verify:all` now includes `npm run worktree:check`, so the harness lifecycle itself is exercised in CI-facing local checks.
+3. `verify:all` now includes `npm run worktree:check`, which runs both the ownership policy check and the harness lifecycle acceptance flow.
 4. Rebase or merge from `main` before opening the PR if another slice landed first.
 5. Remove the worktree after merge:
 
@@ -61,6 +78,8 @@ Some runtimes reject shared `node_modules` symlinks, and shared installs weaken 
 
 ## Non-goal
 
-This playbook does not try to enforce ownership in repo policy or CI yet.
+This playbook does not try to enforce full ownership policy yet.
+
+It only checks harness metadata against git worktree state.
 
 It also does not provide per-worktree traces or metrics yet.
