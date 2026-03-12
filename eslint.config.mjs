@@ -1,8 +1,16 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import storybook from 'eslint-plugin-storybook';
 
 import { defineConfig, globalIgnores } from 'eslint/config';
 import nextVitals from 'eslint-config-next/core-web-vitals';
 import nextTs from 'eslint-config-next/typescript';
+
+const rootDir =
+  typeof __dirname !== 'undefined'
+    ? __dirname
+    : path.dirname(fileURLToPath(import.meta.url));
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -14,7 +22,33 @@ const eslintConfig = defineConfig([
     'coverage/**',
     'storybook-static/**',
     'next-env.d.ts',
+    'src/generated/**',
   ]),
+  {
+    files: [
+      'src/**/*.{ts,tsx}',
+      'tests/**/*.{ts,tsx}',
+      'playwright.config.ts',
+      'vitest.config.ts',
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: './tsconfig.eslint.json',
+        tsconfigRootDir: rootDir,
+      },
+    },
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/consistent-type-assertions': [
+        'error',
+        {
+          assertionStyle: 'never',
+        },
+      ],
+      '@typescript-eslint/no-unnecessary-condition': 'error',
+      '@typescript-eslint/strict-boolean-expressions': 'error',
+    },
+  },
   {
     files: ['src/app/**/*.{ts,tsx}', 'src/components/**/*.{ts,tsx}'],
     rules: {

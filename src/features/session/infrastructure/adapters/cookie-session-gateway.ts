@@ -31,7 +31,7 @@ export class CookieSessionGateway implements SessionGateway {
     const cookieStore = await cookies();
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
-    if (!token) {
+    if (token === undefined || token === '') {
       return null;
     }
 

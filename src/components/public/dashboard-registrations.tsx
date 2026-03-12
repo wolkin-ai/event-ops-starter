@@ -35,6 +35,11 @@ export function DashboardRegistrations({
   return (
     <section className="dashboard-grid">
       {registrations.map((registration) => {
+        const companyName =
+          registration.company.trim() === ''
+            ? 'Independent'
+            : registration.company;
+
         return (
           <article className="panel" key={registration.id}>
             <div className="badge-row">
@@ -44,10 +49,9 @@ export function DashboardRegistrations({
             <div className="stack-sm">
               <h2 className="section-title">{registration.eventTitle}</h2>
               <p className="body-copy">
-                Registered as {registration.attendeeName} for{' '}
-                {registration.company || 'Independent'}.
+                Registered as {registration.attendeeName} for {companyName}.
               </p>
-              {registration.startsAt ? (
+              {registration.startsAt !== null ? (
                 <p className="body-copy">
                   {formatEventDate(registration.startsAt)}
                 </p>

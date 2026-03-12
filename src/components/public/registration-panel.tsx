@@ -2,6 +2,11 @@
 
 import type { PublicEvent } from '@/features/catalog/domain/entities/public-event';
 import { formatEventDate } from '@/lib/format-date';
+import {
+  readErrorMessage,
+  readJsonObject,
+  readRequiredString,
+} from '@/lib/http/client-response';
 
 import { RegistrationForm } from './registration-form';
 
@@ -40,17 +45,21 @@ export function RegistrationPanel({ event }: RegistrationPanelProps) {
             },
             body: JSON.stringify(input),
           });
-          const payload = (await response.json()) as {
-            readonly error?: string;
-            readonly reference?: string;
-          };
+          const payload = await readJsonObject(
+            response,
+            'Registration failed.',
+          );
 
-          if (!response.ok || !payload.reference) {
-            throw new Error(payload.error ?? 'Registration failed.');
+          if (!response.ok) {
+            throw new Error(readErrorMessage(payload, 'Registration failed.'));
           }
 
           return {
-            reference: payload.reference,
+            reference: readRequiredString(
+              payload,
+              'reference',
+              'Registration failed.',
+            ),
           };
         }}
       />

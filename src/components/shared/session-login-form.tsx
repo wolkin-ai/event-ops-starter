@@ -4,6 +4,11 @@ import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 
 import type { SessionRole } from '@/features/session/domain/entities/session';
+import {
+  readErrorMessage,
+  readJsonObject,
+  readRequiredString,
+} from '@/lib/http/client-response';
 
 interface SessionLoginFormProps {
   readonly defaultRole: SessionRole;
@@ -61,17 +66,14 @@ export function SessionLoginForm({
           nextPath,
         }),
       });
-      const payload = (await response.json()) as {
-        readonly error?: string;
-        readonly redirectTo?: string;
-      };
+      const payload = await readJsonObject(response, 'Sign in failed.');
 
-      if (!response.ok || !payload.redirectTo) {
-        setErrorMessage(payload.error ?? 'Sign in failed.');
+      if (!response.ok) {
+        setErrorMessage(readErrorMessage(payload, 'Sign in failed.'));
         return;
       }
 
-      router.push(payload.redirectTo);
+      router.push(readRequiredString(payload, 'redirectTo', 'Sign in failed.'));
       router.refresh();
     });
   }

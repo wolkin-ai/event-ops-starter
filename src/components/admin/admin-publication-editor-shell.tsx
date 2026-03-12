@@ -1,6 +1,7 @@
 'use client';
 
 import type { AdminEventPublication } from '@/features/admin-events/domain/entities/admin-event-publication';
+import { readErrorMessage, readJsonObject } from '@/lib/http/client-response';
 
 import { AdminPublicationForm } from './admin-publication-form';
 
@@ -25,12 +26,15 @@ export function AdminPublicationEditorShell({
             body: JSON.stringify(input),
           },
         );
-        const payload = (await response.json()) as {
-          readonly error?: string;
-        };
+        const payload = await readJsonObject(
+          response,
+          'Publication update failed.',
+        );
 
         if (!response.ok) {
-          throw new Error(payload.error ?? 'Publication update failed.');
+          throw new Error(
+            readErrorMessage(payload, 'Publication update failed.'),
+          );
         }
       }}
     />

@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   const { getCurrentSession } = createSessionServices();
   const session = await getCurrentSession.execute();
 
-  if (!session || (session.role !== 'attendee' && session.role !== 'admin')) {
+  if (!session) {
     redirect(createLoginPath('/dashboard', 'attendee'));
   }
 

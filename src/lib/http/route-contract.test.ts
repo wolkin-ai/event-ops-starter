@@ -9,6 +9,12 @@ import {
   readRequestJson,
 } from './route-contract';
 
+const errorPayloadSchema = z.object({
+  error: z.string(),
+  code: z.string(),
+  requestId: z.string(),
+});
+
 describe('route-contract', () => {
   it('parses a valid JSON body through the route helper', async () => {
     const request = new Request('http://localhost/api/test', {
@@ -78,11 +84,7 @@ describe('route-contract', () => {
       expectedStatus: 400,
       expectedCode: 'request_failed',
     });
-    const payload = (await response.json()) as {
-      error: string;
-      code: string;
-      requestId: string;
-    };
+    const payload = errorPayloadSchema.parse(await response.json());
 
     expect(response.status).toBe(400);
     expect(payload.error).toBe('boom');

@@ -40,8 +40,11 @@ export function createRouteContext(
   request: Request,
   route: string,
 ): RouteContext {
+  const headerRequestId = request.headers.get('x-request-id');
   const requestId =
-    request.headers.get('x-request-id')?.trim() || crypto.randomUUID();
+    headerRequestId !== null && headerRequestId.trim() !== ''
+      ? headerRequestId.trim()
+      : crypto.randomUUID();
 
   return {
     requestId,
@@ -191,7 +194,7 @@ export function handleRouteError(
     return errorResponse(context, {
       status: options.expectedStatus,
       code: options.expectedCode ?? 'request_failed',
-      message: error.message || options.fallbackMessage,
+      message: error.message !== '' ? error.message : options.fallbackMessage,
     });
   }
 

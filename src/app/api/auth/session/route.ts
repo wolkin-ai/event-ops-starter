@@ -17,7 +17,12 @@ const sessionSchema = z.object({
     .trim()
     .optional()
     .transform((value) => {
-      if (!value || !value.startsWith('/') || value.startsWith('//')) {
+      if (
+        value === undefined ||
+        value === '' ||
+        !value.startsWith('/') ||
+        value.startsWith('//')
+      ) {
         return null;
       }
 
@@ -29,7 +34,7 @@ function resolveRedirectPath(
   role: 'attendee' | 'admin',
   nextPath: string | null,
 ) {
-  if (nextPath) {
+  if (nextPath !== null) {
     return nextPath;
   }
 

@@ -3,6 +3,11 @@
 import { useRouter } from 'next/navigation';
 
 import { AdminEventForm } from '@/components/admin/admin-event-form';
+import {
+  readErrorMessage,
+  readJsonObject,
+  readRequiredString,
+} from '@/lib/http/client-response';
 
 export function AdminEventCreateShell() {
   const router = useRouter();
@@ -17,17 +22,21 @@ export function AdminEventCreateShell() {
           },
           body: JSON.stringify(input),
         });
-        const payload = (await response.json()) as {
-          readonly error?: string;
-          readonly reference?: string;
-        };
+        const payload = await readJsonObject(
+          response,
+          'Event creation failed.',
+        );
 
-        if (!response.ok || !payload.reference) {
-          throw new Error(payload.error ?? 'Event creation failed.');
+        if (!response.ok) {
+          throw new Error(readErrorMessage(payload, 'Event creation failed.'));
         }
 
         return {
-          reference: payload.reference,
+          reference: readRequiredString(
+            payload,
+            'reference',
+            'Event creation failed.',
+          ),
         };
       }}
       onCompleted={() => {

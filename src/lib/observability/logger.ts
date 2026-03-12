@@ -20,11 +20,15 @@ const logLevelWeight: Record<LogLevel, number> = {
 };
 
 function normalizeLogLevel(value: string | undefined): LogLevel | null {
-  if (!value) {
+  if (value === undefined) {
     return null;
   }
 
   const normalized = value.trim().toLowerCase();
+
+  if (normalized === '') {
+    return null;
+  }
 
   if (
     normalized === 'debug' ||
@@ -42,7 +46,7 @@ function normalizeLogLevel(value: string | undefined): LogLevel | null {
 function resolveLogLevel(): LogLevel {
   const configured = normalizeLogLevel(process.env.LOG_LEVEL);
 
-  if (configured) {
+  if (configured !== null) {
     return configured;
   }
 
