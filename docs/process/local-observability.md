@@ -20,6 +20,17 @@ Run the app with a more verbose log level when needed:
 LOG_LEVEL=debug npm run dev
 ```
 
+When using parallel worktrees, inspect the shared harness state instead of guessing:
+
+```bash
+./bin/worktree-harness inspect <name>
+./bin/worktree-harness logs <name> app
+./bin/worktree-harness logs <name> storybook
+```
+
+`inspect` prints a JSON snapshot with `branch`, `path`, `host`, `envSource`, and per-target `url` / `pid` / `logPath` / `startedAt`.
+`logs` prints the most recent lines from the shared harness log for the requested target.
+
 Default behavior:
 
 - local development: `info`

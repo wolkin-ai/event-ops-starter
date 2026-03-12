@@ -21,6 +21,7 @@ const STARTUP_TIMEOUT_MS = 30_000;
 const STARTUP_POLL_MS = 500;
 const LOCK_TIMEOUT_MS = 120_000;
 const LOCK_POLL_MS = 200;
+const LOG_TAIL_LINES = 40;
 
 async function main() {
   const command = process.argv[2];
@@ -43,6 +44,12 @@ async function main() {
       return;
     case 'status':
       await handleStatus(process.argv.slice(3));
+      return;
+    case 'logs':
+      await handleLogs(process.argv.slice(3));
+      return;
+    case 'inspect':
+      await handleInspect(process.argv.slice(3));
       return;
     case 'help':
     case '--help':
@@ -310,6 +317,41 @@ async function handleStatus(args) {
   }
 }
 
+async function handleLogs(args) {
+  const context = getGitContext();
+  const options = parseOptions(args);
+  const name = validateWorktreeName(readRequiredPositional(options, 0, 'name'));
+  const target = readTarget(options.positionals[1]);
+  const state = await readState(context.stateDir);
+  const record = await refreshProcessState(readExistingRecord(state, name));
+  const kinds = target === 'all' ? ['app', 'storybook'] : [target];
+  const sections = await Promise.all(
+    kinds.map(async (kind) => {
+      const logPath = readProcessLogPath(context.stateDir, record, kind);
+      const output = await readLogTail(logPath, LOG_TAIL_LINES);
+
+      return [
+        `${kind} log: ${logPath}`,
+        output === '' ? '(no log output yet)' : output,
+      ].join('\n');
+    }),
+  );
+
+  console.log(sections.join('\n\n'));
+}
+
+async function handleInspect(args) {
+  const context = getGitContext();
+  const options = parseOptions(args);
+  const name = validateWorktreeName(readRequiredPositional(options, 0, 'name'));
+  const state = await readState(context.stateDir);
+  const record = await refreshProcessState(readExistingRecord(state, name));
+
+  console.log(
+    JSON.stringify(buildInspectSnapshot(context.stateDir, record), null, 2),
+  );
+}
+
 function getGitContext() {
   const cwd = process.cwd();
   const topLevel = path.resolve(
@@ -537,6 +579,43 @@ async function readLogTail(logPath, lineCount = 20) {
   }
 }
 
+function buildInspectSnapshot(stateDir, record) {
+  return {
+    name: record.name,
+    branch: record.branch,
+    path: record.path,
+    host: record.host,
+    envSource: record.envSource,
+    createdAt: record.createdAt ?? null,
+    app: buildInspectableProcess(stateDir, record, 'app'),
+    storybook: buildInspectableProcess(stateDir, record, 'storybook'),
+  };
+}
+
+function buildInspectableProcess(stateDir, record, kind) {
+  const processInfo = record.processes[kind];
+  const port = kind === 'app' ? record.appPort : record.storybookPort;
+
+  return {
+    status: processInfo === null ? 'stopped' : 'running',
+    port,
+    url: `http://${record.host}:${String(port)}`,
+    pid: processInfo?.pid ?? null,
+    logPath: readProcessLogPath(stateDir, record, kind),
+    startedAt: processInfo?.startedAt ?? null,
+  };
+}
+
+function readProcessLogPath(stateDir, record, kind) {
+  return (
+    record.processes[kind]?.logPath ?? buildLogPath(stateDir, record.name, kind)
+  );
+}
+
+function buildLogPath(stateDir, name, kind) {
+  return path.join(stateDir, 'logs', `${name}-${kind}.log`);
+}
+
 async function refreshProcessState(record) {
   const nextRecord = structuredClone(record);
 
@@ -741,8 +820,8 @@ async function writeState(stateDir, state) {
 
 async function cleanupLogs(stateDir, name) {
   const candidates = [
-    path.join(stateDir, 'logs', `${name}-app.log`),
-    path.join(stateDir, 'logs', `${name}-storybook.log`),
+    buildLogPath(stateDir, name, 'app'),
+    buildLogPath(stateDir, name, 'storybook'),
   ];
 
   for (const filePath of candidates) {
@@ -858,9 +937,13 @@ function printHelp() {
   ./bin/worktree-harness remove <name> [--force] [--delete-branch]
   ./bin/worktree-harness list
   ./bin/worktree-harness status [name]
+  ./bin/worktree-harness logs <name> [app|storybook|all]
+  ./bin/worktree-harness inspect <name>
 
 Notes:
   - metadata, logs, and process state live under the shared git common dir
+  - logs prints the most recent harness log lines for a worktree target
+  - inspect prints a JSON snapshot for agents (branch, path, envSource, pid, logPath, startedAt)
   - create installs dependencies locally by default to keep worktrees isolated
   - --link-node-modules is opt-in because some runtimes reject shared node_modules symlinks
   - the default host is 127.0.0.1, while app/storybook ports are allocated per worktree

@@ -81,6 +81,41 @@ describe.sequential('worktree-harness acceptance', () => {
       );
       expect(storybookResponse.status).toBe(200);
 
+      const inspectOutput = runHarness(repoRoot, ['inspect', 'agent']);
+      const inspectSnapshot = JSON.parse(inspectOutput);
+      expect(inspectSnapshot).toMatchObject({
+        name: 'agent',
+        branch: 'codex/agent',
+        path: worktreeRoot,
+        host: '127.0.0.1',
+        envSource: '.env.example',
+        app: {
+          status: 'running',
+          port: appPort,
+          url: `http://127.0.0.1:${String(appPort)}`,
+        },
+        storybook: {
+          status: 'running',
+          port: storybookPort,
+          url: `http://127.0.0.1:${String(storybookPort)}`,
+        },
+      });
+      expect(inspectSnapshot.app.pid).toEqual(expect.any(Number));
+      expect(inspectSnapshot.app.startedAt).toEqual(expect.any(String));
+      expect(inspectSnapshot.app.logPath).toContain('agent-app.log');
+      expect(inspectSnapshot.storybook.pid).toEqual(expect.any(Number));
+      expect(inspectSnapshot.storybook.startedAt).toEqual(expect.any(String));
+      expect(inspectSnapshot.storybook.logPath).toContain(
+        'agent-storybook.log',
+      );
+
+      const appLogsOutput = runHarness(repoRoot, ['logs', 'agent', 'app']);
+      expect(appLogsOutput).toContain('app log:');
+      expect(appLogsOutput).toContain(
+        `fake harness server listening on 127.0.0.1:${String(appPort)}`,
+      );
+      expect(appLogsOutput).toContain('GET /');
+
       const statusOutput = runHarness(repoRoot, ['status', 'agent']);
       expect(statusOutput).toContain(
         `app: 127.0.0.1:${String(appPort)} (running)`,
@@ -101,6 +136,19 @@ describe.sequential('worktree-harness acceptance', () => {
       expect(stoppedOutput).toContain(
         `storybook: 127.0.0.1:${String(storybookPort)} (stopped)`,
       );
+
+      const stoppedInspectOutput = runHarness(repoRoot, ['inspect', 'agent']);
+      const stoppedInspectSnapshot = JSON.parse(stoppedInspectOutput);
+      expect(stoppedInspectSnapshot.app).toMatchObject({
+        status: 'stopped',
+        pid: null,
+        startedAt: null,
+      });
+      expect(stoppedInspectSnapshot.storybook).toMatchObject({
+        status: 'stopped',
+        pid: null,
+        startedAt: null,
+      });
 
       const removeOutput = runHarness(repoRoot, [
         'remove',
@@ -145,11 +193,15 @@ const host = readFlag(args, '--hostname') ?? readFlag(args, '--host') ?? '127.0.
 const port = Number(readFlag(args, '--port') ?? '3000');
 
 const server = createServer((_request, response) => {
+  console.log(\`\${_request.method} \${_request.url}\`);
   response.statusCode = 200;
   response.end('fake harness server');
 });
 
 server.listen(port, host);
+server.on('listening', () => {
+  console.log(\`fake harness server listening on \${host}:\${port}\`);
+});
 
 const shutdown = () => {
   server.close(() => {
