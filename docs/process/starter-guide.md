@@ -142,6 +142,9 @@ Primary docs:
 - validation at route boundaries
 - local structured logging
 - cleanup checks
+  local `npm run cleanup:check` stays report-only, while the scheduled `Harness Maintenance`
+  workflow uploads a suggested cleanup patch/report artifact when removable tracked
+  artifacts drift back in. Missing required docs still require manual edits.
 - review suite policies
 
 Primary docs:

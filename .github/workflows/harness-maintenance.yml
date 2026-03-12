@@ -29,4 +29,28 @@ jobs:
         run: npm run skills:validate
 
       - name: Check harness cleanliness
+        id: cleanup_check
         run: npm run cleanup:check
+        continue-on-error: true
+
+      - name: Prepare cleanup drift artifacts
+        if: steps.cleanup_check.outcome == 'failure'
+        continue-on-error: true
+        run: |
+          mkdir -p .artifacts/harness-cleanup
+          node scripts/check-harness-cleanliness.mjs \
+            --write-patch .artifacts/harness-cleanup/harness-cleanup.patch \
+            --write-report .artifacts/harness-cleanup/harness-cleanup-report.md
+
+      - name: Upload cleanup drift artifacts
+        if: steps.cleanup_check.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: harness-cleanup-drift
+          path: .artifacts/harness-cleanup
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Fail on cleanup drift
+        if: steps.cleanup_check.outcome == 'failure'
+        run: exit 1
