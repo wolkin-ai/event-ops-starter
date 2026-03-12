@@ -1,14 +1,23 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  adapterTargets,
+  resolveAdapterRoot,
+} from './skill-adapter-targets.mjs';
 import { coreSkills } from './skill-registry.mjs';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(currentDir, '..');
-const adapterRoot = path.join(repoRoot, '.claude', 'skills');
 
-function buildAdapterBody(entryName, canonicalName, description) {
+function buildAdapterBody(
+  target,
+  adapterRoot,
+  entryName,
+  canonicalName,
+  description,
+) {
   const relativePath = path.relative(
     path.join(adapterRoot, entryName),
     path.join(repoRoot, 'skills', 'core', canonicalName, 'SKILL.md'),
@@ -21,12 +30,12 @@ description: ${description}
 
 ## Purpose
 
-この adapter は Claude 系エージェントから project-local skill を呼ぶための入口です。
+この adapter は ${target.agentLabel}から project-local skill を呼ぶための入口です。
 
 ## Use When
 
 - \`${entryName}\` が指定されたとき
-- project-local skill を Claude adapter から解決したいとき
+- project-local skill を ${target.adapterLabel} から解決したいとき
 
 ## Inputs
 
@@ -56,20 +65,46 @@ Canonical skill: \`${relativePath}\`
 `;
 }
 
+async function writeFileIfChanged(filePath, nextBody) {
+  try {
+    const currentBody = await readFile(filePath, 'utf8');
+
+    if (currentBody === nextBody) {
+      return;
+    }
+  } catch (error) {
+    if (error?.code !== 'ENOENT') {
+      throw error;
+    }
+  }
+
+  const tempPath = `${filePath}.tmp-${process.pid}`;
+  await writeFile(tempPath, nextBody, 'utf8');
+  await rename(tempPath, filePath);
+}
+
 async function main() {
-  await mkdir(adapterRoot, { recursive: true });
+  for (const target of adapterTargets) {
+    const adapterRoot = resolveAdapterRoot(repoRoot, target);
+    await mkdir(adapterRoot, { recursive: true });
 
-  for (const skill of coreSkills) {
-    const names = [skill.name, ...skill.aliases];
+    for (const skill of coreSkills) {
+      const names = [skill.name, ...skill.aliases];
 
-    for (const entryName of names) {
-      const dirPath = path.join(adapterRoot, entryName);
-      await mkdir(dirPath, { recursive: true });
-      await writeFile(
-        path.join(dirPath, 'SKILL.md'),
-        buildAdapterBody(entryName, skill.name, skill.description),
-        'utf8',
-      );
+      for (const entryName of names) {
+        const dirPath = path.join(adapterRoot, entryName);
+        await mkdir(dirPath, { recursive: true });
+        await writeFileIfChanged(
+          path.join(dirPath, 'SKILL.md'),
+          buildAdapterBody(
+            target,
+            adapterRoot,
+            entryName,
+            skill.name,
+            skill.description,
+          ),
+        );
+      }
     }
   }
 }

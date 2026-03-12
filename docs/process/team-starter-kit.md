@@ -47,6 +47,7 @@ Say this:
 - `docs/process`
 - `skills/core`
 - `.claude/skills`
+- `.agents/skills`
 - `bin`
 - `scripts`
 - `.storybook`

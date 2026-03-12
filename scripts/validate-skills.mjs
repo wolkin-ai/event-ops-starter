@@ -2,12 +2,15 @@ import { readFile, readdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import {
+  adapterTargets,
+  resolveAdapterRoot,
+} from './skill-adapter-targets.mjs';
 import { coreSkills, requiredSections } from './skill-registry.mjs';
 
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(currentDir, '..');
 const skillRoot = path.join(repoRoot, 'skills', 'core');
-const adapterRoot = path.join(repoRoot, '.claude', 'skills');
 const absolutePathPattern = /\/Users\/|~\/\.|[A-Z]:\\/;
 
 async function readSkillBody(filePath) {
@@ -46,7 +49,9 @@ async function validateCoreSkill(skill) {
   }
 }
 
-async function validateAdapters(skill) {
+async function validateAdapters(target, skill) {
+  const adapterRoot = resolveAdapterRoot(repoRoot, target);
+
   for (const alias of [skill.name, ...skill.aliases]) {
     const adapterPath = path.join(adapterRoot, alias, 'SKILL.md');
     await assertExists(adapterPath);
@@ -60,13 +65,26 @@ async function validateAdapters(skill) {
       throw new Error(`${alias}: adapter must reference canonical skill.`);
     }
 
+    if (!body.includes(target.agentLabel)) {
+      throw new Error(
+        `${alias}: adapter target label mismatch for ${target.name}.`,
+      );
+    }
+
+    if (!body.includes(target.adapterLabel)) {
+      throw new Error(
+        `${alias}: adapter resolver label mismatch for ${target.name}.`,
+      );
+    }
+
     if (absolutePathPattern.test(body)) {
       throw new Error(`${alias}: adapter contains absolute or external path.`);
     }
   }
 }
 
-async function validateNoUnknownAdapters() {
+async function validateNoUnknownAdapters(target) {
+  const adapterRoot = resolveAdapterRoot(repoRoot, target);
   const entries = await readdir(adapterRoot, { withFileTypes: true });
   const known = new Set(
     coreSkills.flatMap((skill) => [skill.name, ...skill.aliases]),
@@ -74,7 +92,9 @@ async function validateNoUnknownAdapters() {
 
   for (const entry of entries) {
     if (entry.isDirectory() && !known.has(entry.name)) {
-      throw new Error(`Unknown adapter directory found: ${entry.name}`);
+      throw new Error(
+        `Unknown ${target.name} adapter directory found: ${entry.name}`,
+      );
     }
   }
 }
@@ -96,10 +116,15 @@ async function main() {
     }
 
     await validateCoreSkill(skill);
-    await validateAdapters(skill);
+
+    for (const target of adapterTargets) {
+      await validateAdapters(target, skill);
+    }
   }
 
-  await validateNoUnknownAdapters();
+  for (const target of adapterTargets) {
+    await validateNoUnknownAdapters(target);
+  }
 }
 
 main().catch((error) => {

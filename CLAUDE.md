@@ -15,7 +15,7 @@ When someone needs a reading map or onboarding path, start from `docs/process/st
 - Codex owns domain language, application logic, review strategy, and specialist reviews.
 - Claude Code owns Storybook drafts, public UI, admin UI, and story maintenance.
 - `skills/core` is the source of truth for reusable skills.
-- `.claude/skills` is an adapter layer generated from project-local skills.
+- `.claude/skills` and `.agents/skills` are adapter layers generated from project-local skills.
 
 ## Architecture
 
@@ -81,6 +81,7 @@ Use `npm run db:reset-local` only when local Prisma state is no longer compatibl
 - Do not depend on `~/.agents/skills` or `~/.codex/skills`.
 - Canonical skills live in `skills/core/<skill-name>/SKILL.md`.
 - Claude adapters are generated into `.claude/skills`.
+- Codex adapters are generated into `.agents/skills`.
 - Alias names are allowed only through the project registry.
 - Do not bypass project-local review scripts or route-contract helpers when equivalent project rules already exist.
 

@@ -95,6 +95,7 @@ src/
   generated/prisma/     # Prisma 7 generated client
 skills/core/            # Canonical project-local skills
 .claude/skills/         # Generated Claude adapters
+.agents/skills/         # Generated Codex adapters
 docs/codex-agents/      # Codex specialist prompts
 ```
 
