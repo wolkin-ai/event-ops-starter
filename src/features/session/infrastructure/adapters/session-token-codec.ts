@@ -1,11 +1,16 @@
-import type {
-  Session,
-  SessionRole,
-} from '@/features/session/domain/entities/session';
+import type { Session } from '@/features/session/domain/entities/session';
+import { z } from 'zod';
 
 interface StoredSession extends Session {
   readonly issuedAt: string;
 }
+
+const storedSessionSchema = z.object({
+  email: z.string(),
+  name: z.string(),
+  role: z.enum(['attendee', 'admin']),
+  issuedAt: z.string(),
+});
 
 const SESSION_SECRET =
   process.env.SESSION_SECRET ?? 'event-ops-starter-dev-session-secret';
@@ -49,10 +54,6 @@ async function signValue(value: string) {
   return toBase64Url(new Uint8Array(signature));
 }
 
-function isSessionRole(value: string): value is SessionRole {
-  return value === 'attendee' || value === 'admin';
-}
-
 export async function encodeSessionToken(session: Session) {
   const body: StoredSession = {
     ...session,
@@ -81,23 +82,18 @@ export async function decodeSessionToken(token: string) {
   }
 
   try {
-    const parsed = JSON.parse(
-      new TextDecoder().decode(fromBase64Url(encodedPayload)),
-    ) as Partial<StoredSession>;
+    const parsed = storedSessionSchema.safeParse(
+      JSON.parse(new TextDecoder().decode(fromBase64Url(encodedPayload))),
+    );
 
-    if (
-      typeof parsed.email !== 'string' ||
-      typeof parsed.name !== 'string' ||
-      typeof parsed.role !== 'string' ||
-      !isSessionRole(parsed.role)
-    ) {
+    if (!parsed.success) {
       return null;
     }
 
     return {
-      email: parsed.email,
-      name: parsed.name,
-      role: parsed.role,
+      email: parsed.data.email,
+      name: parsed.data.name,
+      role: parsed.data.role,
     } satisfies Session;
   } catch {
     return null;

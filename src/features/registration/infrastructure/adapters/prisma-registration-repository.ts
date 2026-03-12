@@ -1,6 +1,10 @@
 import type { RegistrationRepository } from '@/features/registration/application/ports/registration-repository';
 import type { Registration } from '@/features/registration/domain/entities/registration';
+import { z } from 'zod';
+
 import { prisma } from '@/lib/prisma';
+
+const registrationStatusSchema = z.enum(['confirmed']);
 
 function toRegistration(record: {
   id: string;
@@ -21,7 +25,7 @@ function toRegistration(record: {
     company: record.company,
     seatCount: record.seatCount,
     notes: record.notes,
-    status: record.status as Registration['status'],
+    status: registrationStatusSchema.parse(record.status),
     createdAt: record.createdAt.toISOString(),
   };
 }
@@ -72,12 +76,14 @@ export class PrismaRegistrationRepository implements RegistrationRepository {
   async list(filters?: {
     readonly attendeeEmail?: string;
   }): Promise<readonly Registration[]> {
+    const attendeeEmail = filters?.attendeeEmail;
     const registrations = await prisma.registration.findMany({
-      where: filters?.attendeeEmail
-        ? {
-            attendeeEmail: filters.attendeeEmail,
-          }
-        : undefined,
+      where:
+        attendeeEmail !== undefined && attendeeEmail !== ''
+          ? {
+              attendeeEmail,
+            }
+          : undefined,
       orderBy: {
         createdAt: 'desc',
       },

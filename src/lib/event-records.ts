@@ -1,4 +1,5 @@
 import type { EventPlan, EventPublication } from '@/generated/prisma/client';
+import { z } from 'zod';
 
 import type { AdminEvent } from '@/features/admin-events/domain/entities/admin-event';
 import type { AdminEventPublication } from '@/features/admin-events/domain/entities/admin-event-publication';
@@ -6,21 +7,43 @@ import type { PublicEvent } from '@/features/catalog/domain/entities/public-even
 import { adminEventSeeds, publicEventSeeds } from '@/lib/seed-data';
 
 const DEFAULT_TIMEZONE = 'Asia/Tokyo';
+const stringListSchema = z.array(z.string());
+const adminEventStatusSchema = z.enum(['scheduled', 'draft']);
+const publicEventStatusSchema = z.enum(['scheduled', 'sold_out', 'draft']);
+const eventPublicationStatusSchema = z.enum(['draft', 'scheduled', 'sold_out']);
+
+function validateValue<T>(
+  schema: z.ZodType<T>,
+  value: unknown,
+  message: string,
+): T {
+  const result = schema.safeParse(value);
+
+  if (!result.success) {
+    throw new Error(message);
+  }
+
+  return result.data;
+}
 
 function serializeList(items: readonly string[]) {
   return JSON.stringify(items);
 }
 
-function deserializeList(value: string): readonly string[] {
-  try {
-    const parsed = JSON.parse(value) as unknown;
+function deserializeList(value: string, fieldName: string): readonly string[] {
+  let parsed: unknown;
 
-    return Array.isArray(parsed)
-      ? parsed.filter((item) => typeof item === 'string')
-      : [];
+  try {
+    parsed = JSON.parse(value);
   } catch {
-    return [];
+    throw new Error(`${fieldName} must be valid JSON.`);
   }
+
+  return validateValue(
+    stringListSchema,
+    parsed,
+    `${fieldName} must be a JSON array of strings.`,
+  );
 }
 
 function addHours(value: string, hours: number) {
@@ -133,23 +156,39 @@ export function toPublicEvent(event: EventPublication): PublicEvent {
     trackLabel: event.trackLabel,
     seatsTotal: event.seatsTotal,
     seatsRemaining: event.seatsRemaining,
-    status: event.status as PublicEvent['status'],
+    status: validateValue(
+      publicEventStatusSchema,
+      event.status,
+      'Event publication status is invalid for catalog projection.',
+    ),
     schedule: {
       startsAt: event.startsAt.toISOString(),
       endsAt: event.endsAt.toISOString(),
       timezone: event.timezone,
     },
-    highlights: deserializeList(event.highlights),
-    operatorNotes: deserializeList(event.operatorNotes),
+    highlights: deserializeList(
+      event.highlights,
+      'Event publication highlights',
+    ),
+    operatorNotes: deserializeList(
+      event.operatorNotes,
+      'Event publication operator notes',
+    ),
   };
 }
 
 function derivePublicationStatus(
   publication: Pick<EventPublication, 'status'> | null | undefined,
 ): AdminEvent['publicationStatus'] {
-  return publication && publication.status !== 'draft'
-    ? 'published'
-    : 'unpublished';
+  const status = publication
+    ? validateValue(
+        eventPublicationStatusSchema,
+        publication.status,
+        'Event publication status is invalid for admin projection.',
+      )
+    : null;
+
+  return status && status !== 'draft' ? 'published' : 'unpublished';
 }
 
 export function buildEventPublicationRecordFromPlan(
@@ -229,7 +268,11 @@ export function toAdminEvent(
     capacity: event.capacity,
     track: event.track,
     summary: event.summary,
-    status: event.status as AdminEvent['status'],
+    status: validateValue(
+      adminEventStatusSchema,
+      event.status,
+      'Event plan status is invalid for admin projection.',
+    ),
     publicationStatus: derivePublicationStatus(event.publication),
     createdAt: event.createdAt.toISOString(),
   };
@@ -248,8 +291,14 @@ export function toAdminEventPublication(
     heroBlurb: publication.heroBlurb,
     audience: publication.audience,
     trackLabel: publication.trackLabel,
-    highlights: deserializeList(publication.highlights),
-    operatorNotes: deserializeList(publication.operatorNotes),
+    highlights: deserializeList(
+      publication.highlights,
+      'Event publication highlights',
+    ),
+    operatorNotes: deserializeList(
+      publication.operatorNotes,
+      'Event publication operator notes',
+    ),
     seatsTotal: publication.seatsTotal,
     seatsRemaining: publication.seatsRemaining,
     city: publication.city,
