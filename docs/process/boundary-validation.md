@@ -40,6 +40,22 @@ When a new external service is added later:
 - validate outbound payloads before sending them to the provider
 - keep provider schemas inside infrastructure, not in domain/application
 
+## Repo guard
+
+This repository enforces the adapter-side contract pattern through:
+
+```bash
+npm run boundary:check
+```
+
+Current guardrails:
+
+- adapter implementation files under `src/features/**/infrastructure/adapters/*.ts` must import a same-slice `*-contract.ts` module
+- adapter implementation files must not import `zod` directly
+- adapter implementation files must not import `@/lib/event-records` directly
+
+This is a structural guard, not a semantic proof. It keeps the boundary-contract pattern visible and reviewable.
+
 ## Non-goal
 
 This rule does not require every internal function call to use Zod. It only standardizes validation at replaceable system boundaries.

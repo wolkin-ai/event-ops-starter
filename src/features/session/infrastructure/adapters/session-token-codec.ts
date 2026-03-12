@@ -1,16 +1,10 @@
 import type { Session } from '@/features/session/domain/entities/session';
-import { z } from 'zod';
 
-interface StoredSession extends Session {
-  readonly issuedAt: string;
-}
-
-const storedSessionSchema = z.object({
-  email: z.string(),
-  name: z.string(),
-  role: z.enum(['attendee', 'admin']),
-  issuedAt: z.string(),
-});
+import {
+  isSessionToken,
+  parseSession,
+  parseStoredSession,
+} from '@/features/session/infrastructure/adapters/session-contract';
 
 const SESSION_SECRET =
   process.env.SESSION_SECRET ?? 'event-ops-starter-dev-session-secret';
@@ -55,10 +49,9 @@ async function signValue(value: string) {
 }
 
 export async function encodeSessionToken(session: Session) {
-  const body: StoredSession = {
-    ...session,
-    email: session.email.trim().toLowerCase(),
-    name: session.name.trim(),
+  const normalizedSession = parseSession(session);
+  const body = {
+    ...normalizedSession,
     issuedAt: new Date().toISOString(),
   };
   const serialized = JSON.stringify(body);
@@ -69,11 +62,13 @@ export async function encodeSessionToken(session: Session) {
 }
 
 export async function decodeSessionToken(token: string) {
-  const [encodedPayload, providedSignature] = token.split('.');
-
-  if (!encodedPayload || !providedSignature) {
+  if (!isSessionToken(token)) {
     return null;
   }
+
+  const separatorIndex = token.indexOf('.');
+  const encodedPayload = token.slice(0, separatorIndex);
+  const providedSignature = token.slice(separatorIndex + 1);
 
   const expectedSignature = await signValue(encodedPayload);
 
@@ -82,18 +77,14 @@ export async function decodeSessionToken(token: string) {
   }
 
   try {
-    const parsed = storedSessionSchema.safeParse(
+    const parsed = parseStoredSession(
       JSON.parse(new TextDecoder().decode(fromBase64Url(encodedPayload))),
     );
 
-    if (!parsed.success) {
-      return null;
-    }
-
     return {
-      email: parsed.data.email,
-      name: parsed.data.name,
-      role: parsed.data.role,
+      email: parsed.email,
+      name: parsed.name,
+      role: parsed.role,
     } satisfies Session;
   } catch {
     return null;

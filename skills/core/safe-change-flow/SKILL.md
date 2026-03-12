@@ -25,7 +25,7 @@ description: 安全な実装手順と検証順序を固定する project-local s
 2. 変更対象を最小セットに固定する
 3. Story / test / implementation を揃える
 4. 既定では `npm run verify:all` を使う
-5. 個別実行時は `format:check -> db:prepare -> lint -> skills:validate -> arch:check -> typecheck -> test -> build -> build-storybook -> test-storybook -> test:e2e` の順で検証する
+5. 個別実行時は `format:check -> db:prepare -> lint -> skills:validate -> cleanup:check -> boundary:check -> arch:check -> typecheck -> test -> build -> build-storybook -> test-storybook -> test:e2e` の順で検証する
 6. local Prisma state が壊れている場合だけ `db:reset-local` を明示実行する
 
 ## Output Contract

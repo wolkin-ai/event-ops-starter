@@ -2,17 +2,17 @@ import type { AdminEventRepository } from '@/features/admin-events/application/p
 import type { AdminEvent } from '@/features/admin-events/domain/entities/admin-event';
 import type { AdminEventPublication } from '@/features/admin-events/domain/entities/admin-event-publication';
 import {
-  buildEventPlanRecordFromAdminEvent,
-  buildEventPublicationRecordFromPlan,
-  toAdminEvent,
-  toAdminEventPublication,
-} from '@/lib/event-records';
+  buildAdminEventPlanRecord,
+  buildAdminEventPublicationRecord,
+  parseAdminEvent,
+  parseAdminEventPublication,
+} from './prisma-admin-event-contract';
 import { prisma } from '@/lib/prisma';
 
 export class PrismaAdminEventRepository implements AdminEventRepository {
   async create(event: AdminEvent): Promise<void> {
     await prisma.eventPlan.create({
-      data: buildEventPlanRecordFromAdminEvent(event),
+      data: buildAdminEventPlanRecord(event),
     });
   }
 
@@ -35,7 +35,7 @@ export class PrismaAdminEventRepository implements AdminEventRepository {
       ],
     });
 
-    return events.map(toAdminEvent);
+    return events.map(parseAdminEvent);
   }
 
   async publish(eventId: string): Promise<AdminEvent> {
@@ -60,7 +60,7 @@ export class PrismaAdminEventRepository implements AdminEventRepository {
         (total, registration) => total + registration.seatCount,
         0,
       );
-      const publicationRecord = buildEventPublicationRecordFromPlan(event, {
+      const publicationRecord = buildAdminEventPublicationRecord(event, {
         existingPublication: event.publication,
         reservedSeats,
       });
@@ -88,7 +88,7 @@ export class PrismaAdminEventRepository implements AdminEventRepository {
         },
       });
 
-      return toAdminEvent(updatedEvent);
+      return parseAdminEvent(updatedEvent);
     });
   }
 
@@ -115,7 +115,7 @@ export class PrismaAdminEventRepository implements AdminEventRepository {
         throw new Error('Admin event not found.');
       }
 
-      toAdminEvent(event);
+      parseAdminEvent(event);
 
       if (!event.publication || event.publication.status === 'draft') {
         throw new Error('Event publication is already withdrawn.');
@@ -145,7 +145,7 @@ export class PrismaAdminEventRepository implements AdminEventRepository {
         },
       });
 
-      return toAdminEvent(updatedEvent);
+      return parseAdminEvent(updatedEvent);
     });
   }
 
@@ -154,7 +154,7 @@ export class PrismaAdminEventRepository implements AdminEventRepository {
       where: { eventPlanId: eventId },
     });
 
-    return publication ? toAdminEventPublication(publication) : null;
+    return publication ? parseAdminEventPublication(publication) : null;
   }
 
   async updatePublication(
@@ -170,7 +170,7 @@ export class PrismaAdminEventRepository implements AdminEventRepository {
       );
     }
 
-    toAdminEventPublication(existingPublication);
+    parseAdminEventPublication(existingPublication);
 
     const nextPublication = {
       ...existingPublication,
@@ -184,7 +184,7 @@ export class PrismaAdminEventRepository implements AdminEventRepository {
       operatorNotes: JSON.stringify(publication.operatorNotes),
     };
 
-    toAdminEventPublication(nextPublication);
+    parseAdminEventPublication(nextPublication);
 
     const updatedPublication = await prisma.eventPublication.update({
       where: { eventPlanId: publication.eventId },
@@ -200,6 +200,6 @@ export class PrismaAdminEventRepository implements AdminEventRepository {
       },
     });
 
-    return toAdminEventPublication(updatedPublication);
+    return parseAdminEventPublication(updatedPublication);
   }
 }

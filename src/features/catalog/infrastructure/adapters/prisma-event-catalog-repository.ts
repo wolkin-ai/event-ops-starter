@@ -1,7 +1,11 @@
 import type { EventCatalogRepository } from '@/features/catalog/application/ports/event-catalog-repository';
 import type { PublicEvent } from '@/features/catalog/domain/entities/public-event';
-import { toPublicEvent } from '@/lib/event-records';
 import { prisma } from '@/lib/prisma';
+
+import {
+  parseEventSlug,
+  toValidatedPublicEvent,
+} from './prisma-event-publication-contract';
 
 export class PrismaEventCatalogRepository implements EventCatalogRepository {
   async listAll(): Promise<readonly PublicEvent[]> {
@@ -16,19 +20,20 @@ export class PrismaEventCatalogRepository implements EventCatalogRepository {
       },
     });
 
-    return events.map(toPublicEvent);
+    return events.map(toValidatedPublicEvent);
   }
 
   async getBySlug(slug: string): Promise<PublicEvent | null> {
+    const parsedSlug = parseEventSlug(slug);
     const event = await prisma.eventPublication.findFirst({
       where: {
-        slug,
+        slug: parsedSlug,
         status: {
           not: 'draft',
         },
       },
     });
 
-    return event ? toPublicEvent(event) : null;
+    return event ? toValidatedPublicEvent(event) : null;
   }
 }

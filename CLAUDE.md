@@ -65,6 +65,7 @@ npm run db:prepare
 npm run lint
 npm run skills:validate
 npm run cleanup:check
+npm run boundary:check
 npm run arch:check
 npm run typecheck
 npm run test
@@ -105,6 +106,7 @@ Use `npm run db:reset-local` only when local Prisma state is no longer compatibl
 - Route handlers must validate success payloads before returning them.
 - Error payloads must include `code` and `requestId`.
 - New external adapters must validate provider-facing input and output at the infrastructure boundary.
+- External adapter implementations must go through a same-slice `*-contract.ts` module instead of importing `zod` or `@/lib/event-records` directly.
 
 ## Local Observability
 

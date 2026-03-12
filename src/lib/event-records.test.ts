@@ -59,9 +59,7 @@ function buildEventPlan(overrides: Partial<EventPlan> = {}): EventPlan {
   };
 }
 
-function buildAdminEvent(
-  overrides: Partial<AdminEvent> = {},
-): AdminEvent {
+function buildAdminEvent(overrides: Partial<AdminEvent> = {}): AdminEvent {
   return {
     id: 'event-1',
     title: 'Operator Summit',
@@ -147,9 +145,9 @@ describe('event-records', () => {
       }),
     );
 
-    expect(() =>
-      buildEventPlanRecordFromAdminEvent(invalidAdminEvent),
-    ).toThrow('Event plan status is invalid for persistence.');
+    expect(() => buildEventPlanRecordFromAdminEvent(invalidAdminEvent)).toThrow(
+      'Event plan status is invalid for persistence.',
+    );
   });
 
   it('fails fast when building a publication record from an invalid plan status', () => {

@@ -25,12 +25,13 @@
     "skills:sync": "node scripts/sync-skill-adapters.mjs",
     "skills:validate": "node scripts/validate-skills.mjs",
     "cleanup:check": "node scripts/check-harness-cleanliness.mjs",
+    "boundary:check": "node scripts/check-boundary-contracts.mjs",
     "review:architecture": "./bin/codex-review architecture",
     "review:security": "./bin/codex-review security",
     "review:performance": "./bin/codex-review performance",
     "review:investigate": "./bin/codex-review investigate",
     "review:suite": "node scripts/run-review-suite.mjs",
-    "verify:all": "npm run format:check && npm run db:prepare && npm run lint && npm run skills:validate && npm run cleanup:check && npm run arch:check && npm run typecheck && npm run test && npm run build && npm run build-storybook && npm run test-storybook && npm run test:e2e"
+    "verify:all": "npm run format:check && npm run db:prepare && npm run lint && npm run skills:validate && npm run cleanup:check && npm run boundary:check && npm run arch:check && npm run typecheck && npm run test && npm run build && npm run build-storybook && npm run test-storybook && npm run test:e2e"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",

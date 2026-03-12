@@ -1,10 +1,16 @@
 import type { RegistrationRepository } from '@/features/registration/application/ports/registration-repository';
 import type { Registration } from '@/features/registration/domain/entities/registration';
-import { z } from 'zod';
 
 import { prisma } from '@/lib/prisma';
 
-const registrationStatusSchema = z.enum(['confirmed']);
+import {
+  parseAttendeeEmailFilter,
+  parsePublicationAvailability,
+  parsePublicationSeatUpdateData,
+  parseRegistration,
+  parseRegistrationCreateData,
+  parseRegistrationRecord,
+} from './prisma-registration-contract';
 
 function toRegistration(record: {
   id: string;
@@ -14,7 +20,7 @@ function toRegistration(record: {
   company: string;
   seatCount: number;
   notes: string;
-  status: string;
+  status: 'confirmed';
   createdAt: Date;
 }): Registration {
   return {
@@ -25,50 +31,55 @@ function toRegistration(record: {
     company: record.company,
     seatCount: record.seatCount,
     notes: record.notes,
-    status: registrationStatusSchema.parse(record.status),
+    status: record.status,
     createdAt: record.createdAt.toISOString(),
   };
 }
 
 export class PrismaRegistrationRepository implements RegistrationRepository {
   async save(registration: Registration): Promise<void> {
-    const publication = await prisma.eventPublication.findUnique({
-      where: { eventPlanId: registration.eventId },
-      select: {
-        seatsRemaining: true,
-        status: true,
+    const parsedRegistration = parseRegistration(registration);
+    const publication = parsePublicationAvailability(
+      await prisma.eventPublication.findUnique({
+        where: { eventPlanId: parsedRegistration.eventId },
+        select: {
+          seatsRemaining: true,
+          status: true,
+        },
+      }),
+    );
+    const createInput = parseRegistrationCreateData({
+      id: parsedRegistration.id,
+      eventPlanId: parsedRegistration.eventId,
+      attendeeName: parsedRegistration.attendeeName,
+      attendeeEmail: parsedRegistration.attendeeEmail,
+      company: parsedRegistration.company,
+      seatCount: parsedRegistration.seatCount,
+      notes: parsedRegistration.notes,
+      status: parsedRegistration.status,
+      createdAt: new Date(parsedRegistration.createdAt),
+    });
+    const seatUpdate = parsePublicationSeatUpdateData({
+      seatsRemaining: {
+        decrement: parsedRegistration.seatCount,
       },
     });
 
-    if (!publication || publication.status === 'draft') {
+    if (publication === null || publication.status === 'draft') {
       throw new Error('Event is not open for registration.');
     }
 
-    if (registration.seatCount > publication.seatsRemaining) {
+    if (parsedRegistration.seatCount > publication.seatsRemaining) {
       throw new Error('Not enough seats remaining for this registration.');
     }
 
     await prisma.$transaction([
       prisma.registration.create({
-        data: {
-          id: registration.id,
-          eventPlanId: registration.eventId,
-          attendeeName: registration.attendeeName,
-          attendeeEmail: registration.attendeeEmail,
-          company: registration.company,
-          seatCount: registration.seatCount,
-          notes: registration.notes,
-          status: registration.status,
-          createdAt: new Date(registration.createdAt),
-        },
+        data: createInput,
       }),
       prisma.eventPublication.update({
-        where: { eventPlanId: registration.eventId },
-        data: {
-          seatsRemaining: {
-            decrement: registration.seatCount,
-          },
-        },
+        where: { eventPlanId: parsedRegistration.eventId },
+        data: seatUpdate,
       }),
     ]);
   }
@@ -76,10 +87,10 @@ export class PrismaRegistrationRepository implements RegistrationRepository {
   async list(filters?: {
     readonly attendeeEmail?: string;
   }): Promise<readonly Registration[]> {
-    const attendeeEmail = filters?.attendeeEmail;
+    const attendeeEmail = parseAttendeeEmailFilter(filters?.attendeeEmail);
     const registrations = await prisma.registration.findMany({
       where:
-        attendeeEmail !== undefined && attendeeEmail !== ''
+        attendeeEmail !== undefined
           ? {
               attendeeEmail,
             }
@@ -89,6 +100,8 @@ export class PrismaRegistrationRepository implements RegistrationRepository {
       },
     });
 
-    return registrations.map(toRegistration);
+    return registrations.map((record) =>
+      toRegistration(parseRegistrationRecord(record)),
+    );
   }
 }

@@ -9,6 +9,7 @@ import {
   decodeSessionToken,
   encodeSessionToken,
 } from '@/features/session/infrastructure/adapters/session-token-codec';
+import { parseSessionCookieDescriptor } from '@/features/session/infrastructure/adapters/session-contract';
 
 export const SESSION_COOKIE_NAME = 'event-ops-starter.session';
 
@@ -39,18 +40,18 @@ export class CookieSessionGateway implements SessionGateway {
   }
 
   async issue(session: Session): Promise<SessionCookieDescriptor> {
-    return {
+    return parseSessionCookieDescriptor({
       name: SESSION_COOKIE_NAME,
       value: await encodeSessionToken(session),
       options: createCookieOptions(SESSION_MAX_AGE),
-    };
+    });
   }
 
   async clear(): Promise<SessionCookieDescriptor> {
-    return {
+    return parseSessionCookieDescriptor({
       name: SESSION_COOKIE_NAME,
       value: '',
       options: createCookieOptions(0),
-    };
+    });
   }
 }
