@@ -25,6 +25,7 @@ For normal work, a single repository checkout is simpler.
 ./bin/worktree-harness start admin-publication app
 ./bin/worktree-harness start admin-publication storybook
 ./bin/worktree-harness status admin-publication
+./bin/worktree-harness observe admin-publication metrics
 ./bin/worktree-harness stop admin-publication all
 ./bin/worktree-harness remove admin-publication --force --delete-branch
 ```
@@ -38,6 +39,7 @@ For normal work, a single repository checkout is simpler.
 - runs `npm run db:prepare` unless `--skip-db-prepare` is passed
 - assigns app ports from `3001+` and Storybook ports from `6007+`
 - stores shared state and logs under the git common dir at `.git/codex-worktree-harness`
+- stores worktree-local trace and metric samples under the same shared harness directory
 
 Default host binding is `127.0.0.1`.
 
@@ -82,4 +84,4 @@ This playbook does not try to enforce full ownership policy yet.
 
 It only checks harness metadata against git worktree state.
 
-It also does not provide per-worktree traces or metrics yet.
+It also does not provide a full trace viewer or metrics dashboard yet.

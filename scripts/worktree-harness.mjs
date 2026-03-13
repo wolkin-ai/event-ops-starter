@@ -22,6 +22,7 @@ const STARTUP_POLL_MS = 500;
 const LOCK_TIMEOUT_MS = 120_000;
 const LOCK_POLL_MS = 200;
 const LOG_TAIL_LINES = 40;
+const VALID_OBSERVE_TARGETS = new Set(['traces', 'metrics', 'all']);
 
 async function main() {
   const command = process.argv[2];
@@ -50,6 +51,9 @@ async function main() {
       return;
     case 'inspect':
       await handleInspect(process.argv.slice(3));
+      return;
+    case 'observe':
+      await handleObserve(process.argv.slice(3));
       return;
     case 'help':
     case '--help':
@@ -103,7 +107,11 @@ async function handleCreate(args) {
     ]);
 
     try {
-      record.envSource = await ensureEnvFile(context.canonicalRoot, record);
+      record.envSource = await ensureEnvFile(
+        context.canonicalRoot,
+        context.stateDir,
+        record,
+      );
       await bootstrapNodeModules(context.canonicalRoot, worktreePath, options);
 
       if (options.skipDbPrepare !== true) {
@@ -157,7 +165,7 @@ async function handleStart(args) {
       throw new Error(`Worktree path does not look valid: ${record.path}`);
     }
 
-    await ensureEnvFile(context.canonicalRoot, nextRecord);
+    await ensureEnvFile(context.canonicalRoot, context.stateDir, nextRecord);
     await bootstrapNodeModules(context.canonicalRoot, record.path, {});
     const nextBinary = resolveLocalBinary(record.path, 'next');
     const storybookBinary = resolveLocalBinary(record.path, 'storybook');
@@ -261,6 +269,7 @@ async function handleRemove(args) {
     delete state[name];
     await writeState(context.stateDir, state);
     await cleanupLogs(context.stateDir, name);
+    await cleanupObservability(context.stateDir, name);
     console.log(`Removed worktree ${name}.`);
   });
 }
@@ -352,6 +361,27 @@ async function handleInspect(args) {
   );
 }
 
+async function handleObserve(args) {
+  const context = getGitContext();
+  const options = parseOptions(args);
+  const name = validateWorktreeName(readRequiredPositional(options, 0, 'name'));
+  const target = readObserveTarget(options.positionals[1]);
+  const state = await readState(context.stateDir);
+  const record = await refreshProcessState(readExistingRecord(state, name));
+  const observability = buildObservabilityPaths(context.stateDir, record.name);
+  const sections = [];
+
+  if (target === 'metrics' || target === 'all') {
+    sections.push(await renderMetricsObservation(observability.metricsFile));
+  }
+
+  if (target === 'traces' || target === 'all') {
+    sections.push(await renderTraceObservation(observability.traceFile));
+  }
+
+  console.log(sections.join('\n\n'));
+}
+
 function getGitContext() {
   const cwd = process.cwd();
   const topLevel = path.resolve(
@@ -386,7 +416,7 @@ function runCommand(cwd, command, args) {
   });
 }
 
-async function ensureEnvFile(canonicalRoot, record) {
+async function ensureEnvFile(canonicalRoot, stateDir, record) {
   const sourceCandidates = [
     path.join(canonicalRoot, '.env'),
     path.join(canonicalRoot, '.env.example'),
@@ -403,11 +433,19 @@ async function ensureEnvFile(canonicalRoot, record) {
     }
 
     const baseContent = await fsp.readFile(sourcePath, 'utf8');
-    await fsp.writeFile(envPath, renderEnvFile(baseContent, record), 'utf8');
+    await fsp.writeFile(
+      envPath,
+      renderEnvFile(baseContent, buildEnvRecord(stateDir, record)),
+      'utf8',
+    );
     return path.basename(sourcePath);
   }
 
-  await fsp.writeFile(envPath, renderEnvFile('', record), 'utf8');
+  await fsp.writeFile(
+    envPath,
+    renderEnvFile('', buildEnvRecord(stateDir, record)),
+    'utf8',
+  );
   return 'generated';
 }
 
@@ -453,7 +491,10 @@ async function ensureStarted(stateDir, record, kind, command, args, url) {
     cwd: record.path,
     detached: true,
     stdio: ['ignore', logHandle, logHandle],
-    env: process.env,
+    env: {
+      ...process.env,
+      ...buildRuntimeEnv(stateDir, record),
+    },
   });
 
   fs.closeSync(logHandle);
@@ -587,6 +628,7 @@ function buildInspectSnapshot(stateDir, record) {
     host: record.host,
     envSource: record.envSource,
     createdAt: record.createdAt ?? null,
+    observability: buildObservabilityPaths(stateDir, record.name),
     app: buildInspectableProcess(stateDir, record, 'app'),
     storybook: buildInspectableProcess(stateDir, record, 'storybook'),
   };
@@ -614,6 +656,178 @@ function readProcessLogPath(stateDir, record, kind) {
 
 function buildLogPath(stateDir, name, kind) {
   return path.join(stateDir, 'logs', `${name}-${kind}.log`);
+}
+
+function buildObservabilityPaths(stateDir, name) {
+  const directory = path.join(stateDir, 'observability', name);
+
+  return {
+    directory,
+    traceFile: path.join(directory, 'traces.ndjson'),
+    metricsFile: path.join(directory, 'metrics.ndjson'),
+  };
+}
+
+function buildEnvRecord(stateDir, record) {
+  const observability = buildObservabilityPaths(stateDir, record.name);
+
+  return {
+    ...record,
+    observabilityDir: observability.directory,
+    traceFile: observability.traceFile,
+    metricsFile: observability.metricsFile,
+  };
+}
+
+function buildRuntimeEnv(stateDir, record) {
+  const observability = buildObservabilityPaths(stateDir, record.name);
+
+  return {
+    WORKTREE_NAME: record.name,
+    WORKTREE_HOST: record.host,
+    WORKTREE_APP_PORT: String(record.appPort),
+    WORKTREE_STORYBOOK_PORT: String(record.storybookPort),
+    WORKTREE_OBSERVABILITY_DIR: observability.directory,
+    WORKTREE_TRACE_FILE: observability.traceFile,
+    WORKTREE_METRICS_FILE: observability.metricsFile,
+  };
+}
+
+async function renderTraceObservation(traceFile) {
+  const output = await readLogTail(traceFile, LOG_TAIL_LINES);
+
+  return [
+    `traces: ${traceFile}`,
+    output === '' ? '(no trace output yet)' : output,
+  ].join('\n');
+}
+
+async function renderMetricsObservation(metricsFile) {
+  const raw = await readLogTail(metricsFile, 10_000);
+  const summary = summarizeMetricEntries(parseNdjsonLines(raw));
+
+  return [
+    `metrics: ${metricsFile}`,
+    summary === null
+      ? '(no metric output yet)'
+      : JSON.stringify(summary, null, 2),
+  ].join('\n');
+}
+
+function parseNdjsonLines(raw) {
+  if (raw.trim() === '') {
+    return [];
+  }
+
+  return raw
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+    .map((line) => {
+      try {
+        return JSON.parse(line);
+      } catch {
+        return null;
+      }
+    })
+    .filter((entry) => entry !== null);
+}
+
+function summarizeMetricEntries(entries) {
+  if (entries.length === 0) {
+    return null;
+  }
+
+  const totals = {
+    totalRequests: 0,
+    byOutcome: {
+      success: 0,
+      clientError: 0,
+      serverError: 0,
+    },
+    durationMs: {
+      min: null,
+      avg: 0,
+      max: 0,
+    },
+  };
+  const routes = new Map();
+
+  for (const entry of entries) {
+    if (
+      typeof entry.route !== 'string' ||
+      typeof entry.method !== 'string' ||
+      !Number.isFinite(entry.durationMs) ||
+      (entry.outcome !== 'success' &&
+        entry.outcome !== 'client_error' &&
+        entry.outcome !== 'server_error')
+    ) {
+      continue;
+    }
+
+    const durationMs = Number(entry.durationMs);
+    totals.totalRequests += 1;
+    totals.byOutcome[toCamelOutcome(entry.outcome)] += 1;
+    totals.durationMs.max = Math.max(totals.durationMs.max, durationMs);
+    totals.durationMs.min =
+      totals.durationMs.min === null
+        ? durationMs
+        : Math.min(totals.durationMs.min, durationMs);
+    totals.durationMs.avg += durationMs;
+
+    const key = `${entry.route} ${entry.method}`;
+    const existing = routes.get(key) ?? {
+      route: entry.route,
+      method: entry.method,
+      count: 0,
+      byOutcome: {
+        success: 0,
+        clientError: 0,
+        serverError: 0,
+      },
+      avgDurationMs: 0,
+      maxDurationMs: 0,
+    };
+
+    existing.count += 1;
+    existing.byOutcome[toCamelOutcome(entry.outcome)] += 1;
+    existing.avgDurationMs += durationMs;
+    existing.maxDurationMs = Math.max(existing.maxDurationMs, durationMs);
+    routes.set(key, existing);
+  }
+
+  if (totals.totalRequests === 0) {
+    return null;
+  }
+
+  totals.durationMs.avg = Number(
+    (totals.durationMs.avg / totals.totalRequests).toFixed(2),
+  );
+
+  return {
+    generatedAt: new Date().toISOString(),
+    ...totals,
+    routes: Array.from(routes.values())
+      .map((routeSummary) => ({
+        ...routeSummary,
+        avgDurationMs: Number(
+          (routeSummary.avgDurationMs / routeSummary.count).toFixed(2),
+        ),
+      }))
+      .sort((left, right) => right.count - left.count),
+  };
+}
+
+function toCamelOutcome(outcome) {
+  if (outcome === 'client_error') {
+    return 'clientError';
+  }
+
+  if (outcome === 'server_error') {
+    return 'serverError';
+  }
+
+  return 'success';
 }
 
 async function refreshProcessState(record) {
@@ -833,6 +1047,17 @@ async function cleanupLogs(stateDir, name) {
   }
 }
 
+async function cleanupObservability(stateDir, name) {
+  try {
+    await fsp.rm(buildObservabilityPaths(stateDir, name).directory, {
+      recursive: true,
+      force: true,
+    });
+  } catch {
+    // best effort cleanup
+  }
+}
+
 function parseOptions(args) {
   const options = {
     positionals: [],
@@ -923,6 +1148,16 @@ function readTarget(value) {
   return target;
 }
 
+function readObserveTarget(value) {
+  const target = value ?? 'all';
+
+  if (!VALID_OBSERVE_TARGETS.has(target)) {
+    throw new Error(`Unknown observe target: ${target}`);
+  }
+
+  return target;
+}
+
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -939,11 +1174,13 @@ function printHelp() {
   ./bin/worktree-harness status [name]
   ./bin/worktree-harness logs <name> [app|storybook|all]
   ./bin/worktree-harness inspect <name>
+  ./bin/worktree-harness observe <name> [traces|metrics|all]
 
 Notes:
   - metadata, logs, and process state live under the shared git common dir
   - logs prints the most recent harness log lines for a worktree target
-  - inspect prints a JSON snapshot for agents (branch, path, envSource, pid, logPath, startedAt)
+  - inspect prints a JSON snapshot for agents (branch, path, envSource, observability paths, pid, logPath, startedAt)
+  - observe prints recent traces and aggregated metric samples for a worktree
   - create installs dependencies locally by default to keep worktrees isolated
   - --link-node-modules is opt-in because some runtimes reject shared node_modules symlinks
   - the default host is 127.0.0.1, while app/storybook ports are allocated per worktree

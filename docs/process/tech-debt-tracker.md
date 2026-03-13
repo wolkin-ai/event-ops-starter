@@ -2,15 +2,15 @@
 
 ## Current debt items
 
-| ID     | Area                     | Status | Priority | Exit condition                                                                                        |
-| ------ | ------------------------ | ------ | -------- | ----------------------------------------------------------------------------------------------------- |
-| HD-002 | Local traces and metrics | Open   | Medium   | The repo provides an optional local trace or metrics harness without requiring hosted infrastructure. |
-| HD-005 | CI review execution      | Open   | Medium   | Specialist reviews can run with real Codex execution in a controlled CI or dedicated review worker.   |
+| ID     | Area                | Status | Priority | Exit condition                                                                                      |
+| ------ | ------------------- | ------ | -------- | --------------------------------------------------------------------------------------------------- |
+| HD-005 | CI review execution | Open   | Medium   | Specialist reviews can run with real Codex execution in a controlled CI or dedicated review worker. |
 
 ## Recently closed
 
 | ID     | Area                                   | Closed by                                                                                                                    |
 | ------ | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| HD-002 | Local traces and metrics               | Route helpers now emit worktree-local trace and metric samples, and `./bin/worktree-harness observe` exposes them locally.   |
 | HD-007 | Parallel agent ownership policy        | `npm run worktree:policy` now checks harness-managed branch/path/runtime ownership and runs inside `npm run worktree:check`. |
 | HD-003 | Cleanup automation                     | The scheduled maintenance workflow now prepares cleanup patch/report artifacts instead of only reporting drift.              |
 | HD-006 | Parallel agent enforcement             | `npm run worktree:check` now runs a temporary-repo acceptance flow for `./bin/worktree-harness` inside `verify:all`.         |

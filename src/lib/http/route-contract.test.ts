@@ -1,3 +1,7 @@
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
@@ -106,5 +110,66 @@ describe('route-contract', () => {
       code: 'forbidden',
       requestId: context.requestId,
     });
+  });
+
+  it('writes local trace and metric samples when worktree telemetry paths exist', async () => {
+    const tempDir = mkdtempSync(
+      path.join(os.tmpdir(), 'event-ops-route-telemetry-'),
+    );
+    const previousTraceFile = process.env.WORKTREE_TRACE_FILE;
+    const previousMetricsFile = process.env.WORKTREE_METRICS_FILE;
+    const tracesFile = path.join(tempDir, 'traces.ndjson');
+    const metricsFile = path.join(tempDir, 'metrics.ndjson');
+
+    process.env.WORKTREE_TRACE_FILE = tracesFile;
+    process.env.WORKTREE_METRICS_FILE = metricsFile;
+
+    try {
+      const request = new Request('http://localhost/api/test');
+      const context = createRouteContext(request, 'test.route');
+
+      jsonResponse(
+        context,
+        z.object({
+          ok: z.literal(true),
+        }),
+        { ok: true },
+      );
+
+      const traceEntry = JSON.parse(readFileSync(tracesFile, 'utf8').trim());
+      const metricEntry = JSON.parse(readFileSync(metricsFile, 'utf8').trim());
+
+      expect(traceEntry).toMatchObject({
+        kind: 'http.request',
+        requestId: context.requestId,
+        route: 'test.route',
+        method: 'GET',
+        status: 200,
+        outcome: 'success',
+      });
+      expect(metricEntry).toMatchObject({
+        kind: 'http.request.metric',
+        requestId: context.requestId,
+        route: 'test.route',
+        method: 'GET',
+        status: 200,
+        outcome: 'success',
+      });
+      expect(metricEntry.durationMs).toEqual(expect.any(Number));
+    } finally {
+      if (previousTraceFile === undefined) {
+        delete process.env.WORKTREE_TRACE_FILE;
+      } else {
+        process.env.WORKTREE_TRACE_FILE = previousTraceFile;
+      }
+
+      if (previousMetricsFile === undefined) {
+        delete process.env.WORKTREE_METRICS_FILE;
+      } else {
+        process.env.WORKTREE_METRICS_FILE = previousMetricsFile;
+      }
+
+      rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });

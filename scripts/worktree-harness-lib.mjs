@@ -93,6 +93,9 @@ export function createInitialRecord({
 
 export function renderEnvFile(baseContent, record) {
   const normalizedBase = baseContent.trimEnd();
+  const observabilityDir = record.observabilityDir ?? '';
+  const traceFile = record.traceFile ?? '';
+  const metricsFile = record.metricsFile ?? '';
 
   return `${normalizedBase}
 
@@ -101,6 +104,9 @@ WORKTREE_NAME="${record.name}"
 WORKTREE_HOST="${record.host}"
 WORKTREE_APP_PORT="${String(record.appPort)}"
 WORKTREE_STORYBOOK_PORT="${String(record.storybookPort)}"
+WORKTREE_OBSERVABILITY_DIR="${observabilityDir}"
+WORKTREE_TRACE_FILE="${traceFile}"
+WORKTREE_METRICS_FILE="${metricsFile}"
 `;
 }
 

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { ZodError, type ZodType } from 'zod';
 
 import { createLogger, type AppLogger } from '@/lib/observability/logger';
+import { recordHttpExchangeTelemetry } from '@/lib/observability/worktree-telemetry';
 
 export interface RouteContext {
   readonly requestId: string;
@@ -118,9 +119,18 @@ export function jsonResponse<T>(
   const response = NextResponse.json(result.data, init);
   response.headers.set('x-request-id', context.requestId);
 
+  const durationMs = Date.now() - context.startedAt;
+
   context.logger.info('request.completed', {
     status: response.status,
-    durationMs: Date.now() - context.startedAt,
+    durationMs,
+  });
+  recordHttpExchangeTelemetry({
+    requestId: context.requestId,
+    route: context.route,
+    method: context.method,
+    status: response.status,
+    durationMs,
   });
 
   return response;
@@ -151,10 +161,11 @@ export function errorResponse(
   response.headers.set('x-request-id', context.requestId);
 
   const logMessage = 'request.failed';
+  const durationMs = Date.now() - context.startedAt;
   const logFields = {
     status: options.status,
     code: options.code,
-    durationMs: Date.now() - context.startedAt,
+    durationMs,
     ...(options.details !== undefined ? { details: options.details } : {}),
   };
 
@@ -163,6 +174,15 @@ export function errorResponse(
   } else {
     context.logger.warn(logMessage, logFields);
   }
+
+  recordHttpExchangeTelemetry({
+    requestId: context.requestId,
+    route: context.route,
+    method: context.method,
+    status: options.status,
+    durationMs,
+    code: options.code,
+  });
 
   return response;
 }

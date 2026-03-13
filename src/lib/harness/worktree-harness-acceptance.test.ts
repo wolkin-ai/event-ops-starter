@@ -60,6 +60,8 @@ describe.sequential('worktree-harness acceptance', () => {
       );
       expect(envContent).toContain('WORKTREE_NAME="agent"');
       expect(envContent).toContain(`WORKTREE_APP_PORT="${String(appPort)}"`);
+      expect(envContent).toContain('WORKTREE_TRACE_FILE=');
+      expect(envContent).toContain('WORKTREE_METRICS_FILE=');
 
       const listOutput = runHarness(repoRoot, ['list']);
       expect(listOutput).toContain('agent');
@@ -89,6 +91,11 @@ describe.sequential('worktree-harness acceptance', () => {
         path: worktreeRoot,
         host: '127.0.0.1',
         envSource: '.env.example',
+        observability: {
+          directory: expect.stringContaining('observability/agent'),
+          traceFile: expect.stringContaining('traces.ndjson'),
+          metricsFile: expect.stringContaining('metrics.ndjson'),
+        },
         app: {
           status: 'running',
           port: appPort,
@@ -115,6 +122,20 @@ describe.sequential('worktree-harness acceptance', () => {
         `fake harness server listening on 127.0.0.1:${String(appPort)}`,
       );
       expect(appLogsOutput).toContain('GET /');
+
+      const metricsOutput = runHarness(repoRoot, [
+        'observe',
+        'agent',
+        'metrics',
+      ]);
+      expect(metricsOutput).toContain('metrics:');
+      expect(metricsOutput).toContain('"totalRequests":');
+      expect(metricsOutput).toContain('"route": "fixture.http"');
+
+      const tracesOutput = runHarness(repoRoot, ['observe', 'agent', 'traces']);
+      expect(tracesOutput).toContain('traces:');
+      expect(tracesOutput).toContain('"kind":"http.request"');
+      expect(tracesOutput).toContain('"route":"fixture.http"');
 
       const statusOutput = runHarness(repoRoot, ['status', 'agent']);
       expect(statusOutput).toContain(
@@ -186,7 +207,9 @@ async function createFixtureRepository(repoRoot: string) {
   await writeFile(path.join(repoRoot, '.env.example'), 'FIXTURE="1"\n', 'utf8');
   await writeFile(
     path.join(repoRoot, 'node_modules', 'fake-dev-server.mjs'),
-    `import { createServer } from 'node:http';
+    `import fs from 'node:fs';
+import path from 'node:path';
+import { createServer } from 'node:http';
 
 const args = process.argv.slice(2);
 const host = readFlag(args, '--hostname') ?? readFlag(args, '--host') ?? '127.0.0.1';
@@ -194,6 +217,7 @@ const port = Number(readFlag(args, '--port') ?? '3000');
 
 const server = createServer((_request, response) => {
   console.log(\`\${_request.method} \${_request.url}\`);
+  recordTelemetry(_request.method, _request.url);
   response.statusCode = 200;
   response.end('fake harness server');
 });
@@ -220,6 +244,32 @@ function readFlag(values, name) {
   }
 
   return values[index + 1];
+}
+
+function recordTelemetry(method, requestUrl) {
+  const traceFile = process.env.WORKTREE_TRACE_FILE;
+  const metricsFile = process.env.WORKTREE_METRICS_FILE;
+  const payload = {
+    timestamp: new Date().toISOString(),
+    requestId: \`\${method}-\${requestUrl}\`,
+    route: 'fixture.http',
+    method,
+    status: 200,
+    durationMs: 1,
+    outcome: 'success',
+  };
+
+  appendLine(traceFile, { kind: 'http.request', ...payload });
+  appendLine(metricsFile, { kind: 'http.request.metric', ...payload });
+}
+
+function appendLine(filePath, payload) {
+  if (typeof filePath !== 'string' || filePath.trim() === '') {
+    return;
+  }
+
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.appendFileSync(filePath, \`\${JSON.stringify(payload)}\\n\`, 'utf8');
 }
 `,
     'utf8',

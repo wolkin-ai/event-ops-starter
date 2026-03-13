@@ -64,9 +64,27 @@ describe('worktree-harness-lib', () => {
     expect(
       renderEnvFile(
         'DATABASE_URL="file:./dev.db"\nSESSION_SECRET="change-me"\n',
-        record,
+        {
+          ...record,
+          observabilityDir: '/tmp/repo-ops-cleanup/.observability',
+          traceFile: '/tmp/repo-ops-cleanup/.observability/traces.ndjson',
+          metricsFile: '/tmp/repo-ops-cleanup/.observability/metrics.ndjson',
+        },
       ),
     ).toContain('WORKTREE_NAME="ops-cleanup"');
+    expect(
+      renderEnvFile(
+        'DATABASE_URL="file:./dev.db"\nSESSION_SECRET="change-me"\n',
+        {
+          ...record,
+          observabilityDir: '/tmp/repo-ops-cleanup/.observability',
+          traceFile: '/tmp/repo-ops-cleanup/.observability/traces.ndjson',
+          metricsFile: '/tmp/repo-ops-cleanup/.observability/metrics.ndjson',
+        },
+      ),
+    ).toContain(
+      'WORKTREE_TRACE_FILE="/tmp/repo-ops-cleanup/.observability/traces.ndjson"',
+    );
   });
 
   it('accepts an explicit host override', () => {
