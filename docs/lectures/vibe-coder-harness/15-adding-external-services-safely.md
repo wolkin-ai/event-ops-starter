@@ -24,13 +24,13 @@
 - environment variable や provider account を勝手に変えない理由を説明できる
 - `local provider checks` と `infrastructure continuity` の役割の違いを理解する
 
-## この回で伝えたい中心メッセージ
+## この章の中心メッセージ
 
 - 外部サービスは、つながった瞬間から「自分の外」の要素が増えます
 - だから、まず小さく確かめてから広げる順番が大事です
 - 既に使っている provider や env 名を無意識に変えると、動いていたものまで壊れます
 
-## 導入で使う一言
+## 導入のひとこと
 
 > 外部サービスを足すと、急に不具合の場所が見えにくくなります。  
 > 今日は、どこから順番に確かめると安全かを整理します。
@@ -46,13 +46,13 @@
 
 ## 1. なぜ外部サービスは難しくなるのか
 
-### 伝えること
+### 押さえるポイント
 
 - 画面の外にある要素が増えると、どこで失敗しているのか切り分けにくくなる
 - UI の問題なのか、env の問題なのか、provider 側の設定なのかが混ざりやすい
 - だから、確認の順番を決めておく必要がある
 
-### 話す例
+### 身近なたとえ
 
 - 電気がつかない時に、いきなり部屋全体を疑うより、まずコンセントやスイッチを見た方が速いです
 - 外部サービスも同じで、小さい確認から始めた方が原因を絞りやすいです
@@ -76,7 +76,7 @@
 3. 最小 useful action を CLI で試す
 4. その後に browser / preview / production へ広げる
 
-### 講師が言える一言
+### 要点をひとことで
 
 - いきなりブラウザから試すと、失敗場所が混ざりやすいです
 - 先に CLI で通すと、外部サービス自体が生きているかを切り分けやすくなります
@@ -90,13 +90,13 @@
 - 認証が通るか
 - 最小の useful action が通るか
 
-### この回で伝えること
+### この章で整理すること
 
 - 最初の再現手段が browser だと、UI 問題と provider 問題が混ざる
 - CLI なら、より小さい単位で失敗を切り分けられる
 - その確認が将来の incident 対応の入口にもなる
 
-### 話す例
+### 身近なたとえ
 
 - 配信機材でいうと、まずケーブル単体や音声入力を確認してから全体をつなぐ感覚に近いです
 
@@ -112,13 +112,13 @@
 - 既存接続を守るルール
 - 勝手に置き換えないための考え方
 
-### この回で伝えること
+### この章で整理すること
 
 - 既存の provider account は勝手に変えない
 - 既存の env var 名は無断で rename / drop しない
 - preview / production と docs / workflow は一緒に動かす
 
-### 講師が言える一言
+### 要点をひとことで
 
 - 実装を直すことと、接続先を変えることは別の重さの変更です
 - 後者には migration plan が必要です
@@ -147,7 +147,7 @@ npm run check:<provider> -- <smallest-useful-action>
 3. `npm run check:preview -- --base-url https://<preview-domain>`
 4. その後で browser / E2E / promotion
 
-### ここで伝えること
+### ここで整理すること
 
 - 名前をそろえると、入口が分かりやすい
 - 順番をそろえると、切り分けしやすい
@@ -178,16 +178,16 @@ npm run check:<provider> -- <smallest-useful-action>
 - deploy pipeline の詳細実装
 - observability backend の構築
 
-## 実演の流れ案
+## おすすめの進め方
 
-1. 外部サービスが入ると切り分けが難しくなると話す
-2. `check:<provider>` の考え方を説明する
-3. `npm run check:observability` を見せる
-4. `npm run check:preview -- --base-url http://127.0.0.1:3000` を見せる
-5. continuity のルールを説明する
+1. 外部サービスが入ると切り分けが難しくなる、という前提を押さえる
+2. `check:<provider>` の考え方を読み返す
+3. `npm run check:observability` を実行して結果を確認する
+4. `npm run check:preview -- --base-url http://127.0.0.1:3000` を実行して結果を確認する
+5. continuity のルールを読み返す
 6. 「小さく確認してから広げる」とまとめる
 
-## 実演時に講師が言える一言
+## 進めながら頭に置く一句
 
 - いきなり browser から試さないのが大事です
 - 先に CLI で provider 自体の確認をすると、原因を絞りやすいです
@@ -195,10 +195,10 @@ npm run check:<provider> -- <smallest-useful-action>
 
 ## 受講者にやってもらう最小課題
 
-- `check:<provider>` が何のためにあるかを一言で説明する
+- `check:<provider>` が何のためにあるかを一言で言い換えてみる
 - `npm run check:observability` を実行する
 - `npm run check:preview -- --base-url http://127.0.0.1:3000` を実行する
-- continuity が何を守っているかを一言で説明する
+- continuity が何を守っているかを一言で言い換えてみる
 
 ## 受講後に残したい理解
 
@@ -207,7 +207,7 @@ npm run check:<provider> -- <smallest-useful-action>
 - infrastructure continuity は、既存の接続先や env 契約を守る考え方
 - 次回は、役割を混ぜない設計へ進む
 
-## 締めの一言案
+## 締めのひとこと
 
 > 今日は、外部サービスを安全に足すための確認順序と continuity を整理しました。  
 > 次回は、ここまで後回しにしてきた「役割を混ぜない設計」に進みます。
