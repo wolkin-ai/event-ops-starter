@@ -18,15 +18,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       <main className="container section-stack">
         <section className="split-grid">
           <div className="panel stack-md">
-            <p className="eyebrow">Session boundary</p>
+            <p className="eyebrow">Auth.js boundary</p>
             <h1 className="section-title">
-              Use a lightweight role session before entering attendee or admin
-              routes.
+              Use Auth.js-backed demo credentials before entering attendee or
+              admin routes.
             </h1>
             <p className="body-copy">
-              This starter uses a signed session cookie so teams can evaluate
-              route protection and role-aware flows without wiring a full
-              identity provider on day one.
+              This starter now uses Auth.js JWT sessions so the same login
+              boundary can run locally on PostgreSQL and deploy to Vercel
+              without a custom cookie implementation.
             </p>
             <ul className="note-list">
               <li>
@@ -38,8 +38,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 events.
               </li>
               <li>
-                The session layer is intentionally small so Auth.js can replace
-                it later.
+                Demo roles still keep the UX lightweight, but session transport
+                is now the hosted-ready Auth.js path.
               </li>
             </ul>
           </div>

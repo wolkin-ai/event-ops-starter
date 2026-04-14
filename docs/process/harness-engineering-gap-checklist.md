@@ -24,6 +24,7 @@ The purpose is not to copy the article literally. The purpose is to measure whet
 | ----------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------- |
 | Repository as system of record            | Agents need one place to read rules, architecture, and process.                             | `AGENTS.md` is the entry, `CLAUDE.md` is the canon, ADRs and process docs hold the details.                                                                                                                                                                                                                         | Adopted | Keep this structure when renaming the product.                                                 |
 | Local-first development harness           | Agents are more reliable when the app boots without external systems.                       | SQLite, demo session cookie, Storybook, Vitest, and Playwright run locally without external auth or database servers.                                                                                                                                                                                               | Adopted | Preserve this rule when adding new dependencies.                                               |
+| Provider adoption continuity              | Once a real product adds hosted auth, storage, queues, or deployment, agents need stable resource identities plus a local-first verification path. | The starter remains local-first, and `docs/process/infrastructure-continuity.md` plus `docs/process/local-provider-checks.md` now define how derived products should preserve hosted accounts/env contracts and add repo-local provider checks before browser debugging.                                         | Adopted | When the product adds a provider, add a repo-local `npm run check:<provider>` command and keep env names stable unless a migration plan is explicit. |
 | Replaceable boundaries and adapters       | Swappable infrastructure reduces rewrite cost and keeps PoC decisions reversible.           | Ports, composition roots, session gateway, and separate planning/publication models are already in place.                                                                                                                                                                                                           | Adopted | Add every new external dependency through a port and local adapter.                            |
 | Boundary validation                       | Agent output becomes safer when inputs and outputs are validated at system edges.           | Route handlers use shared request/response contract helpers, current Prisma/session adapters fail fast at their boundaries, and `npm run boundary:check` enforces same-slice contract modules for future adapters.                                                                                                  | Adopted | Preserve the guard and keep new provider schemas inside infrastructure.                        |
 | Agent-visible observability               | Agents work better when they can inspect logs, traces, and runtime behavior directly.       | Structured route logs and request IDs exist, route helpers now emit worktree-local trace and metric samples, and `./bin/worktree-harness inspect/logs/observe` exposes them without requiring hosted infrastructure.                                                                                                | Adopted | Add a richer trace viewer or metrics dashboard only if the local files stop being enough.      |
@@ -40,17 +41,19 @@ The purpose is not to copy the article literally. The purpose is to measure whet
 When a new product starts from this template, add the missing harness layers in this order:
 
 1. Keep local-first startup intact.
-2. Standardize boundary validation.
-3. Add structured logs that agents can inspect locally.
-4. Add quality score and debt tracking docs.
-5. Add scheduled cleanup.
-6. Add background review automation only when the team actually runs multiple agents in parallel.
+2. When a hosted provider becomes necessary, add its local-first provider checks before wiring preview or browser flows.
+3. Standardize boundary validation.
+4. Add structured logs that agents can inspect locally.
+5. Add quality score and debt tracking docs.
+6. Add scheduled cleanup.
+7. Add background review automation only when the team actually runs multiple agents in parallel.
 
 ## Intentional non-goals for this starter
 
 The starter does not try to ship every mature harness feature on day one.
 
 - It does not require a hosted observability stack before product discovery starts.
+- It does not ship provider-specific `check:<provider>` scripts before a real product adopts hosted services.
 - It does not enforce ownership for manual worktrees that bypass the harness.
 - It does not auto-merge agent work by default.
 

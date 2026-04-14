@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: event-ops-starter-db
+    restart: unless-stopped
+    ports:
+      - '5434:5432'
+    environment:
+      POSTGRES_USER: eventops
+      POSTGRES_PASSWORD: eventops_dev
+      POSTGRES_DB: event_ops_dev
+    volumes:
+      - event_ops_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U eventops -d event_ops_dev']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  event_ops_pgdata:

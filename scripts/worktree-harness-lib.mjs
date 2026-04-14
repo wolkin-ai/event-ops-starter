@@ -25,6 +25,16 @@ export function defaultWorktreePath(canonicalRoot, name) {
   );
 }
 
+export function buildWorktreeManifestPath(worktreePath, name) {
+  return path.join(
+    worktreePath,
+    'docs',
+    'temp',
+    'worktrees',
+    `${validateWorktreeName(name)}.md`,
+  );
+}
+
 export function validateHost(host) {
   if (typeof host !== 'string' || host.trim() === '') {
     throw new Error('host must be a non-empty string.');

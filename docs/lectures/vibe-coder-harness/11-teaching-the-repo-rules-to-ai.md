@@ -8,7 +8,7 @@
 
 第11回では、ここまで見てきた流儀を、人だけでなく AI にも守ってもらうための仕組みを扱います。
 
-この回の主役は `project-local skills`、`skills:sync`、`skills:validate`、review wrapper ですが、AI 活用の一般論を話す回ではありません。
+この回の主役は `project-local skills`、`skills:sync`、`skills:validate`、review wrapper ですが、AI 活用の一般論に寄り道しない章です。
 この repository の中にルールと振る舞いを持たせると、なぜ作業が安定するのかをつかむ回です。
 
 ## 対象
@@ -24,13 +24,13 @@
 - `skills:sync` と `skills:validate` の役割をざっくり説明できる
 - review wrapper が AI のレビュー入口として何をしているか理解する
 
-## この回で伝えたい中心メッセージ
+## この章の中心メッセージ
 
 - AI を便利に使うだけでは、同じ作業を安定して繰り返しにくい
 - だから、この repo の中に「どう動くべきか」を持たせる
 - AI の振る舞いを個人のPC任せにせず、project-local に寄せることが大事です
 
-## 導入で使う一言
+## 導入のひとこと
 
 > AI が賢いことと、この repo の流儀を守ってくれることは別です。  
 > 今日は、その流儀を repo の中に置いて、AI にも読ませる仕組みを整理します。
@@ -46,13 +46,13 @@
 
 ## 1. なぜ AI の振る舞いを repo の中に置くのか
 
-### 伝えること
+### 押さえるポイント
 
 - AI はその場で賢く答えても、毎回同じ流儀で動くとは限らない
 - 人によって使う環境や設定が違うと、出力もぶれやすい
 - だから、この project では「どう動くか」を repo の中に置く
 
-### 話す例
+### 身近なたとえ
 
 - 同じチームでも、口頭ルールだけだと人によってやり方がずれます
 - AI も同じで、毎回同じ入口を用意した方が安定します
@@ -75,7 +75,7 @@
 - `.claude/skills` と `.agents/skills` は adapter 層
 - ホーム配下の skill に依存しない
 
-### ここで伝えること
+### ここで整理すること
 
 - 正本が repo の中にあると、チームで共有しやすい
 - project ごとの流儀を外に逃がさずに済む
@@ -88,7 +88,7 @@
 - 正本 skill から adapter を作り直してそろえる
 - 入口ごとの差を減らすための同期
 
-### 実演コマンド
+### 実行するコマンド
 
 ```bash
 npm run skills:sync
@@ -101,13 +101,13 @@ npm run skills:sync
 - adapter がずれていないか
 - 変な参照先になっていないか
 
-### 実演コマンド
+### 実行するコマンド
 
 ```bash
 npm run skills:validate
 ```
 
-### この回で伝えること
+### この章で整理すること
 
 - AI 用の手順書も、置くだけでは足りない
 - 同期して、壊れていないか確認して、はじめて安定する
@@ -124,7 +124,7 @@ npm run skills:validate
 - AI レビューの窓口
 - project-local なレビュー入口
 
-### この環境で見せられる入口
+### このリポジトリの入り口になるファイル
 
 ```bash
 ./bin/codex-review architecture src
@@ -133,7 +133,7 @@ npm run skills:validate
 npm run review:suite
 ```
 
-### ここで伝えること
+### ここで整理すること
 
 - その場その場で AI に自由入力するより、入口が決まっている方が再現しやすい
 - review の観点も、architecture / security / performance のように分けられている
@@ -141,13 +141,13 @@ npm run review:suite
 
 ## 5. この仕組みがあると何が楽か
 
-### 伝えること
+### 押さえるポイント
 
 - 人が変わっても、AI の入口をそろえやすい
 - project 固有の流儀がぶれにくい
 - review も implementation も、同じ repository の中でたどりやすい
 
-### 講師が言える一言
+### 要点をひとことで
 
 - AI を万能に信じるのではなく、repo 側でレールを敷くのが大事です
 - project-local skills は、そのレールを visible にするための仕組みです
@@ -177,16 +177,16 @@ npm run review:suite
 - review schema の詳細
 - CI 連携の細部
 
-## 実演の流れ案
+## おすすめの進め方
 
-1. AI の出力がぶれやすい理由を話す
-2. `skills/core` が正本だと説明する
-3. `npm run skills:sync` を見せる
-4. `npm run skills:validate` を見せる
-5. `./bin/codex-review architecture src` と `npm run review:suite` を見せる
+1. AI の出力がぶれやすい理由を自分の言葉で整理する
+2. `skills/core` が正本である、という地図を頭に置く
+3. `npm run skills:sync` を実行して結果を確認する
+4. `npm run skills:validate` を実行して結果を確認する
+5. `./bin/codex-review architecture src` と `npm run review:suite` を実行して結果を確認する
 6. AI にも repo の流儀を読ませる意味をまとめる
 
-## 実演時に講師が言える一言
+## 進めながら頭に置く一句
 
 - AI の振る舞いを repo の外に置くと、再現性が落ちやすいです
 - 正本と adapter を分けると、管理しやすくなります
@@ -194,10 +194,10 @@ npm run review:suite
 
 ## 受講者にやってもらう最小課題
 
-- `skills/core` が何の置き場かを一言で説明する
+- `skills/core` が何の置き場かを一言で言い換えてみる
 - `npm run skills:sync` を実行する
 - `npm run skills:validate` を実行する
-- review wrapper が何を助けるかを一言で説明する
+- review wrapper が何を助けるかを一言で言い換えてみる
 
 ## 受講後に残したい理解
 
@@ -206,7 +206,7 @@ npm run review:suite
 - `skills:sync` と `skills:validate` は、その手順書をそろえて壊れていないか見る
 - 次回は、review suite で変更をどこで止めるかに進む
 
-## 締めの一言案
+## 締めのひとこと
 
 > 今日は、AI にこの環境の流儀を守ってもらう仕組みを整理しました。  
 > 次回は、その流儀を review suite でどう gate にするかへ進みます。

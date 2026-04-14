@@ -14,7 +14,7 @@ This file is a guide, not the source of truth. Detailed rules still live in the 
 
 ## One-sentence summary
 
-This repository is an AI-ready, local-first Next.js starter that includes a public sample product, an admin console, project-local skills, explicit architecture rules, and review/verification gates.
+This repository is an AI-ready, local-first Next.js starter that includes a public sample product, an admin console, project-local skills, explicit architecture rules, review/verification gates, and playbooks for provider rollout plus parallel worktree ownership.
 
 ## What this repository is for
 
@@ -87,9 +87,24 @@ Read in this order:
 Read in this order:
 
 1. [CLAUDE.md](../../CLAUDE.md)
-2. [docs/process/boundary-validation.md](./boundary-validation.md)
-3. [docs/process/local-observability.md](./local-observability.md)
-4. [docs/process/skill-matrix.md](./skill-matrix.md)
+2. [docs/process/harness-implementation-checklist.md](./harness-implementation-checklist.md)
+3. [docs/process/boundary-validation.md](./boundary-validation.md)
+4. [docs/process/local-observability.md](./local-observability.md)
+5. [docs/process/skill-matrix.md](./skill-matrix.md)
+
+### I want to add a hosted provider or deployment later
+
+Read in this order:
+
+1. [docs/process/infrastructure-continuity.md](./infrastructure-continuity.md)
+2. [docs/process/local-provider-checks.md](./local-provider-checks.md)
+3. [docs/process/harness-implementation-checklist.md](./harness-implementation-checklist.md)
+4. [docs/process/local-observability.md](./local-observability.md)
+
+Starter commands:
+
+- `npm run check:observability`
+- `npm run check:preview -- --base-url http://127.0.0.1:3000`
 
 ### I want to maintain the platform itself
 
@@ -141,6 +156,9 @@ Primary docs:
 
 - validation at route boundaries
 - local structured logging
+- infrastructure continuity once hosted services exist
+- local provider checks before browser or preview debugging
+- task manifests for parallel worktrees
 - cleanup checks
   local `npm run cleanup:check` stays report-only, while the scheduled `Harness Maintenance`
   workflow uploads a suggested cleanup patch/report artifact when removable tracked
@@ -150,7 +168,10 @@ Primary docs:
 Primary docs:
 
 - [docs/process/boundary-validation.md](./boundary-validation.md)
+- [docs/process/infrastructure-continuity.md](./infrastructure-continuity.md)
+- [docs/process/local-provider-checks.md](./local-provider-checks.md)
 - [docs/process/local-observability.md](./local-observability.md)
+- [docs/process/parallel-agent-worktrees.md](./parallel-agent-worktrees.md)
 - [docs/adr/ADR-007-harness-maturity-defaults.md](../adr/ADR-007-harness-maturity-defaults.md)
 
 ### Governance rules
@@ -167,16 +188,20 @@ Primary docs:
 
 ## Typical questions and where to answer them
 
-| Question                                 | First document to open                                                |
-| ---------------------------------------- | --------------------------------------------------------------------- |
-| What is this repo for?                   | [README.md](../../README.md)                                          |
-| Which rule wins?                         | [CLAUDE.md](../../CLAUDE.md)                                          |
-| How do I start a new product from this?  | [docs/process/starting-a-new-project.md](./starting-a-new-project.md) |
-| What is still incomplete in the harness? | [docs/process/tech-debt-tracker.md](./tech-debt-tracker.md)           |
-| How mature is the harness right now?     | [docs/process/quality-score.md](./quality-score.md)                   |
-| How do route contracts work?             | [docs/process/boundary-validation.md](./boundary-validation.md)       |
-| How do I guide someone through the repo? | [docs/process/team-starter-kit.md](./team-starter-kit.md)             |
-| Which skill should be used?              | [docs/process/skill-matrix.md](./skill-matrix.md)                     |
+| Question                                  | First document to open                                                                    |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------- |
+| What is this repo for?                    | [README.md](../../README.md)                                                              |
+| Which rule wins?                          | [CLAUDE.md](../../CLAUDE.md)                                                              |
+| How do I start a new product from this?   | [docs/process/starting-a-new-project.md](./starting-a-new-project.md)                     |
+| What is still incomplete in the harness?  | [docs/process/tech-debt-tracker.md](./tech-debt-tracker.md)                               |
+| How mature is the harness right now?      | [docs/process/quality-score.md](./quality-score.md)                                       |
+| How do I add a hosted provider safely?    | [docs/process/local-provider-checks.md](./local-provider-checks.md)                       |
+| How do I preserve hosted infra choices?   | [docs/process/infrastructure-continuity.md](./infrastructure-continuity.md)               |
+| How do route contracts work?              | [docs/process/boundary-validation.md](./boundary-validation.md)                           |
+| What should I check while implementing?   | [docs/process/harness-implementation-checklist.md](./harness-implementation-checklist.md) |
+| How do I guide someone through the repo?  | [docs/process/team-starter-kit.md](./team-starter-kit.md)                                 |
+| How do parallel agents declare ownership? | [docs/process/parallel-agent-worktrees.md](./parallel-agent-worktrees.md)                 |
+| Which skill should be used?               | [docs/process/skill-matrix.md](./skill-matrix.md)                                         |
 
 ## The minimum mental model
 

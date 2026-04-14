@@ -1635,6 +1635,7 @@ export type EventPublicationCreateManyArgs<ExtArgs extends runtime.Types.Extensi
    * The data used to create many EventPublications.
    */
   data: Prisma.EventPublicationCreateManyInput | Prisma.EventPublicationCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1653,6 +1654,7 @@ export type EventPublicationCreateManyAndReturnArgs<ExtArgs extends runtime.Type
    * The data used to create many EventPublications.
    */
   data: Prisma.EventPublicationCreateManyInput | Prisma.EventPublicationCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

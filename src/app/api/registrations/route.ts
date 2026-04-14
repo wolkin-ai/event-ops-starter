@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 import { createRegistrationServices } from '@/composition/registration';
-import { createSessionServices } from '@/composition/session';
 import {
   createRouteContext,
   handleRouteError,
@@ -33,13 +32,7 @@ export async function POST(request: Request) {
       context,
     );
     const { createRegistration } = createRegistrationServices();
-    const { issueSession } = createSessionServices();
     const registration = await createRegistration.execute(input);
-    const cookie = await issueSession.execute({
-      name: registration.attendeeName,
-      email: registration.attendeeEmail,
-      role: 'attendee',
-    });
     const response = jsonResponse(
       context,
       createRegistrationResponseSchema,
@@ -49,8 +42,6 @@ export async function POST(request: Request) {
       },
       { status: 201 },
     );
-
-    response.cookies.set(cookie.name, cookie.value, cookie.options);
 
     return response;
   } catch (error) {

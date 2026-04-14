@@ -10,6 +10,7 @@ AI agents should read it before editing and use it again before commit. Humans s
 - [ ] [ADR-003](../adr/ADR-003-architecture.md) の依存方向を前提にした
 - [ ] 変更が UI / domain / application / infrastructure のどこに属するか先に決めた
 - [ ] 必要なら contract card / glossary / process doc の更新対象を洗い出した
+- [ ] hosted provider / deployment continuity に触れる変更なら [infrastructure-continuity.md](./infrastructure-continuity.md) と [local-provider-checks.md](./local-provider-checks.md) を確認した
 
 ## Before you start
 
@@ -81,14 +82,27 @@ AI agents should read it before editing and use it again before commit. Humans s
 - [ ] `npm run db:prepare` でローカル開発状態を再現できる
 - [ ] Storybook / Vitest / Playwright を壊していない
 
+## External providers and infrastructure continuity
+
+- [ ] hosted provider を追加または更新するなら env contract を docs に残した
+- [ ] 既存の hosted provider / deployment target を無断で置き換えていない
+- [ ] env var rename / drop を行うなら migration plan がある
+- [ ] 新しい provider を追加するなら repo-local `check:<provider>` command か emulator を先に用意した
+- [ ] provider reachability と最小 useful action を browser / E2E / preview より前に確認した
+- [ ] preview / production / docs / workflow の前提が食い違っていない
+- [ ] preview / production へ進める前に `check:preview --strict-observability true` を通す運用にした
+
 ## Worktree and multi-agent
 
 - [ ] 並列実装が必要なら canonical root 直下ではなく harness-managed worktree を使う
 - [ ] worktree 名は task 単位で分けている
 - [ ] `./bin/worktree-harness create <name>` で作業用 worktree を切った
+- [ ] `docs/temp/worktrees/<task-id>.md` の task manifest を作成または更新した
+- [ ] manifest の `owned paths` と `do not touch` を埋めた
 - [ ] `./bin/worktree-harness start <name>` で app / storybook を起動できる
 - [ ] `./bin/worktree-harness inspect <name>` で branch / path / pid / logPath を確認できる
 - [ ] `./bin/worktree-harness logs <name> app` か `storybook` で直近ログを確認できる
+- [ ] shared file に触れる変更なら serial 扱いへ戻した
 - [ ] `npm run worktree:policy` が通る
 - [ ] 必要なら `npm run worktree:check` で harness lifecycle を再確認した
 
@@ -118,6 +132,7 @@ AI agents should read it before editing and use it again before commit. Humans s
 - [ ] harness / script / workflow 変更なら acceptance test も見直した
 - [ ] `npm run typecheck` が通る
 - [ ] `npm run test` が通る
+- [ ] CI や review automation に載せる check は `--json` 出力で機械可読にできる
 - [ ] UI 変更なら `npm run build-storybook` と `npm run test-storybook` を確認した
 - [ ] 重要な harness 変更なら `npm run verify:all` を通した
 - [ ] 必要なら `npm run review:suite` を通した

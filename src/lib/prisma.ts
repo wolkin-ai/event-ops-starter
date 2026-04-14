@@ -1,4 +1,7 @@
-import { PrismaLibSql } from '@prisma/adapter-libsql';
+import 'dotenv/config';
+
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 import { PrismaClient } from '@/generated/prisma/client';
 
@@ -6,16 +9,19 @@ declare global {
   var __eventOpsPrisma__: PrismaClient | undefined;
 }
 
-const adapter = new PrismaLibSql({
-  url: process.env.DATABASE_URL ?? 'file:./dev.db',
-});
+function createPrismaClient() {
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+  });
+  const adapter = new PrismaPg(pool);
 
-export const prisma =
-  globalThis.__eventOpsPrisma__ ??
-  new PrismaClient({
+  return new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
   });
+}
+
+export const prisma = globalThis.__eventOpsPrisma__ ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
   globalThis.__eventOpsPrisma__ = prisma;

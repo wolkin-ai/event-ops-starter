@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 import type { CreateRegistrationInput } from '@/features/registration/application/usecases/create-registration-usecase';
 
@@ -19,6 +21,7 @@ export function RegistrationForm({
   onSubmit,
   onCompleted,
 }: RegistrationFormProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [attendeeName, setAttendeeName] = useState('');
   const [attendeeEmail, setAttendeeEmail] = useState('');
@@ -44,6 +47,17 @@ export function RegistrationForm({
           notes,
         });
 
+        const signInResult = await signIn('credentials', {
+          name: attendeeName,
+          email: attendeeEmail,
+          role: 'attendee',
+          redirect: false,
+        });
+
+        if (typeof signInResult.error === 'string') {
+          throw new Error('Registration succeeded, but sign in failed.');
+        }
+
         setSuccessMessage(
           `Registration confirmed for ${eventTitle}. Ref ${result.reference}.`,
         );
@@ -53,6 +67,8 @@ export function RegistrationForm({
         setSeatCount('1');
         setNotes('');
         onCompleted?.();
+        router.push('/dashboard');
+        router.refresh();
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : 'Registration failed.',

@@ -7,6 +7,7 @@ import process from 'node:process';
 
 import {
   allocateWorktreeRuntime,
+  buildWorktreeManifestPath,
   createInitialRecord,
   defaultBranchName,
   defaultWorktreePath,
@@ -107,6 +108,10 @@ async function handleCreate(args) {
     ]);
 
     try {
+      const manifestPath = await ensureTaskManifest(
+        context.canonicalRoot,
+        record,
+      );
       record.envSource = await ensureEnvFile(
         context.canonicalRoot,
         context.stateDir,
@@ -122,6 +127,9 @@ async function handleCreate(args) {
       await writeState(context.stateDir, state);
 
       console.log(toDisplayRecord(record));
+      if (manifestPath !== null) {
+        console.log(`  manifest: ${manifestPath}`);
+      }
       console.log(`  app url: http://${record.host}:${String(record.appPort)}`);
       console.log(
         `  storybook url: http://${record.host}:${String(record.storybookPort)}`,
@@ -416,6 +424,61 @@ function runCommand(cwd, command, args) {
   });
 }
 
+async function ensureTaskManifest(canonicalRoot, record) {
+  const manifestPath = buildWorktreeManifestPath(record.path, record.name);
+
+  if (fs.existsSync(manifestPath)) {
+    return manifestPath;
+  }
+
+  const templatePath = path.join(
+    canonicalRoot,
+    'docs',
+    'templates',
+    'WORKTREE_TASK_MANIFEST.md',
+  );
+
+  if (!fs.existsSync(templatePath)) {
+    return null;
+  }
+
+  const templateContent = await fsp.readFile(templatePath, 'utf8');
+
+  await fsp.mkdir(path.dirname(manifestPath), { recursive: true });
+  await fsp.writeFile(
+    manifestPath,
+    renderTaskManifestTemplate(templateContent, record),
+    'utf8',
+  );
+
+  return manifestPath;
+}
+
+function renderTaskManifestTemplate(templateContent, record) {
+  return templateContent
+    .replaceAll('__TASK_ID__', record.name)
+    .replaceAll('__OWNER_NAME__', normalizeOwnerName(process.env.OWNER_NAME))
+    .replaceAll('__BRANCH_NAME__', record.branch)
+    .replaceAll('__WORKTREE_PATH__', record.path)
+    .replaceAll(
+      '__APP_URL__',
+      `http://${record.host}:${String(record.appPort)}`,
+    )
+    .replaceAll(
+      '__STORYBOOK_URL__',
+      `http://${record.host}:${String(record.storybookPort)}`,
+    );
+}
+
+function normalizeOwnerName(value) {
+  if (typeof value !== 'string') {
+    return 'unassigned';
+  }
+
+  const normalized = value.trim();
+  return normalized === '' ? 'unassigned' : normalized;
+}
+
 async function ensureEnvFile(canonicalRoot, stateDir, record) {
   const sourceCandidates = [
     path.join(canonicalRoot, '.env'),
@@ -625,6 +688,7 @@ function buildInspectSnapshot(stateDir, record) {
     name: record.name,
     branch: record.branch,
     path: record.path,
+    manifestPath: buildWorktreeManifestPath(record.path, record.name),
     host: record.host,
     envSource: record.envSource,
     createdAt: record.createdAt ?? null,
@@ -1179,9 +1243,10 @@ function printHelp() {
 Notes:
   - metadata, logs, and process state live under the shared git common dir
   - logs prints the most recent harness log lines for a worktree target
-  - inspect prints a JSON snapshot for agents (branch, path, envSource, observability paths, pid, logPath, startedAt)
+  - inspect prints a JSON snapshot for agents (branch, path, manifestPath, envSource, observability paths, pid, logPath, startedAt)
   - observe prints recent traces and aggregated metric samples for a worktree
   - create installs dependencies locally by default to keep worktrees isolated
+  - create seeds docs/temp/worktrees/<name>.md when docs/templates/WORKTREE_TASK_MANIFEST.md exists
   - --link-node-modules is opt-in because some runtimes reject shared node_modules symlinks
   - the default host is 127.0.0.1, while app/storybook ports are allocated per worktree
   - pass --host only when you already manage a custom loopback alias or other bindable host`);

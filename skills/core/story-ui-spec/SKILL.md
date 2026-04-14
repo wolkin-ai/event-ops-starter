@@ -21,10 +21,11 @@ description: Storybook を入口に slice を設計し、状態面を明確化�
 
 ## Workflow
 
-1. story の目的を 1 文で書く
-2. default / error / success を揃える
-3. play 関数で主要操作を 1 件以上検証する
-4. contract card と接続する
+1. `docs/process/harness-implementation-checklist.md` の Storybook-first UI section を確認する
+2. story の目的を 1 文で書く
+3. default / error / success を揃える
+4. play 関数で主要操作を 1 件以上検証する
+5. contract card と接続する
 
 ## Output Contract
 

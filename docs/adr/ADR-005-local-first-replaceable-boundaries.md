@@ -19,14 +19,14 @@ The main risks were:
 
 We adopt the following rules:
 
-1. Local development must run with SQLite and demo session cookies only.
+1. Local development must run with repo-local PostgreSQL and demo role Auth.js sessions.
 2. Seed data is explicit and runs through `db:seed` / `db:prepare`, not through adapters.
 3. Admin planning and public publication use separate persistence models.
 4. Session handling goes through the `session` feature and its gateway.
-5. Composition roots must allow dependency overrides so local, test, and future production adapters can be swapped.
+5. Composition roots must allow dependency overrides so local, test, preview, and future production adapters can be swapped.
 
 ## Consequences
 
-- Local setup remains simple and does not require an external server.
-- Replacing auth or publication flow later becomes an infrastructure task, not a domain rewrite.
+- Local setup remains repo-local through Docker Compose and explicit env contracts.
+- Replacing auth or publication flow later remains an infrastructure task, not a domain rewrite.
 - The codebase carries a little more structure early, but the boundary drift risk is lower.
