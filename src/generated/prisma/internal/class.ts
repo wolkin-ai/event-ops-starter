@@ -19,8 +19,8 @@ const config: runtime.GetPrismaClientConfig = {
   "previewFeatures": [],
   "clientVersion": "7.4.2",
   "engineVersion": "94a226be1cf2967af2541cca5529f0f7ba866919",
-  "activeProvider": "sqlite",
-  "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"sqlite\"\n}\n\nmodel EventPlan {\n  id            String            @id\n  slug          String            @unique\n  title         String\n  city          String\n  venue         String\n  startsAt      DateTime\n  endsAt        DateTime\n  timezone      String\n  capacity      Int\n  track         String\n  status        String\n  summary       String\n  createdAt     DateTime          @default(now())\n  updatedAt     DateTime          @updatedAt\n  publication   EventPublication?\n  registrations Registration[]\n}\n\nmodel EventPublication {\n  eventPlanId    String    @id\n  slug           String    @unique\n  title          String\n  summary        String\n  city           String\n  venue          String\n  heroEyebrow    String\n  heroBlurb      String\n  audience       String\n  trackLabel     String\n  seatsTotal     Int\n  seatsRemaining Int\n  status         String\n  highlights     String\n  operatorNotes  String\n  startsAt       DateTime\n  endsAt         DateTime\n  timezone       String\n  createdAt      DateTime  @default(now())\n  updatedAt      DateTime  @updatedAt\n  eventPlan      EventPlan @relation(fields: [eventPlanId], references: [id], onDelete: Cascade)\n}\n\nmodel Registration {\n  id            String    @id\n  eventPlanId   String\n  attendeeName  String\n  attendeeEmail String\n  company       String\n  seatCount     Int\n  notes         String\n  status        String\n  createdAt     DateTime  @default(now())\n  eventPlan     EventPlan @relation(fields: [eventPlanId], references: [id], onDelete: Cascade)\n\n  @@index([attendeeEmail])\n}\n",
+  "activeProvider": "postgresql",
+  "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel EventPlan {\n  id            String            @id\n  slug          String            @unique\n  title         String\n  city          String\n  venue         String\n  startsAt      DateTime\n  endsAt        DateTime\n  timezone      String\n  capacity      Int\n  track         String\n  status        String\n  summary       String\n  createdAt     DateTime          @default(now())\n  updatedAt     DateTime          @updatedAt\n  publication   EventPublication?\n  registrations Registration[]\n}\n\nmodel EventPublication {\n  eventPlanId    String    @id\n  slug           String    @unique\n  title          String\n  summary        String\n  city           String\n  venue          String\n  heroEyebrow    String\n  heroBlurb      String\n  audience       String\n  trackLabel     String\n  seatsTotal     Int\n  seatsRemaining Int\n  status         String\n  highlights     String\n  operatorNotes  String\n  startsAt       DateTime\n  endsAt         DateTime\n  timezone       String\n  createdAt      DateTime  @default(now())\n  updatedAt      DateTime  @updatedAt\n  eventPlan      EventPlan @relation(fields: [eventPlanId], references: [id], onDelete: Cascade)\n}\n\nmodel Registration {\n  id            String    @id\n  eventPlanId   String\n  attendeeName  String\n  attendeeEmail String\n  company       String\n  seatCount     Int\n  notes         String\n  status        String\n  createdAt     DateTime  @default(now())\n  eventPlan     EventPlan @relation(fields: [eventPlanId], references: [id], onDelete: Cascade)\n\n  @@index([attendeeEmail])\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -45,10 +45,10 @@ async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Modul
 }
 
 config.compilerWasm = {
-  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_fast_bg.sqlite.mjs"),
+  getRuntime: async () => await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.mjs"),
 
   getQueryCompilerWasmModule: async () => {
-    const { wasm } = await import("@prisma/client/runtime/query_compiler_fast_bg.sqlite.wasm-base64.mjs")
+    const { wasm } = await import("@prisma/client/runtime/query_compiler_fast_bg.postgresql.wasm-base64.mjs")
     return await decodeBase64AsWasm(wasm)
   },
 

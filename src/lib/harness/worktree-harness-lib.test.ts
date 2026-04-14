@@ -63,7 +63,12 @@ describe('worktree-harness-lib', () => {
 
     expect(
       renderEnvFile(
-        'DATABASE_URL="file:./dev.db"\nSESSION_SECRET="change-me"\n',
+        [
+          'DATABASE_URL="postgresql://eventops:eventops_dev@127.0.0.1:5434/event_ops_dev?schema=public"',
+          'NEXT_PUBLIC_APP_URL="http://127.0.0.1:3000"',
+          'AUTH_SECRET="change-me"',
+          'AUTH_URL="http://127.0.0.1:3000"',
+        ].join('\n'),
         {
           ...record,
           observabilityDir: '/tmp/repo-ops-cleanup/.observability',
@@ -74,7 +79,12 @@ describe('worktree-harness-lib', () => {
     ).toContain('WORKTREE_NAME="ops-cleanup"');
     expect(
       renderEnvFile(
-        'DATABASE_URL="file:./dev.db"\nSESSION_SECRET="change-me"\n',
+        [
+          'DATABASE_URL="postgresql://eventops:eventops_dev@127.0.0.1:5434/event_ops_dev?schema=public"',
+          'NEXT_PUBLIC_APP_URL="http://127.0.0.1:3000"',
+          'AUTH_SECRET="change-me"',
+          'AUTH_URL="http://127.0.0.1:3000"',
+        ].join('\n'),
         {
           ...record,
           observabilityDir: '/tmp/repo-ops-cleanup/.observability',
@@ -113,8 +123,8 @@ describe('worktree-harness-lib', () => {
   });
 
   it('builds default sibling paths', () => {
-    expect(
-      defaultWorktreePath('/Users/takmin/git/event-ops-starter', 'ops'),
-    ).toBe('/Users/takmin/git/event-ops-starter-ops');
+    expect(defaultWorktreePath('/repo/event-ops-starter', 'ops')).toBe(
+      '/repo/event-ops-starter-ops',
+    );
   });
 });

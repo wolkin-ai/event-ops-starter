@@ -11,6 +11,8 @@ const requiredDocs = [
   'docs/process/harness-engineering-gap-checklist.md',
   'docs/process/quality-score.md',
   'docs/process/tech-debt-tracker.md',
+  'docs/process/infrastructure-continuity.md',
+  'docs/process/local-provider-checks.md',
   'docs/process/local-observability.md',
   'docs/process/parallel-agent-worktrees.md',
   'docs/process/starting-a-new-project.md',

@@ -45,6 +45,7 @@ Say this:
 - `CLAUDE.md`
 - `docs/adr`
 - `docs/process`
+- `docs/templates`
 - `skills/core`
 - `.claude/skills`
 - `.agents/skills`
@@ -74,20 +75,29 @@ Say this:
 
 1. Follow [docs/process/starting-a-new-project.md](./starting-a-new-project.md).
 2. Review [docs/process/harness-engineering-gap-checklist.md](./harness-engineering-gap-checklist.md).
-3. Keep the rules and replace the sample domain gradually.
+3. If the product will adopt hosted providers early, read [docs/process/infrastructure-continuity.md](./infrastructure-continuity.md) and [docs/process/local-provider-checks.md](./local-provider-checks.md).
+4. Keep the rules and replace the sample domain gradually.
 
 ### Flow C: make a safe change
 
 1. Use [skills/core/safe-change-flow/SKILL.md](../../skills/core/safe-change-flow/SKILL.md).
-2. If the change touches naming, also use [skills/core/define-domain-language/SKILL.md](../../skills/core/define-domain-language/SKILL.md).
-3. Run `npm run verify:all`.
-4. Run `npm run review:suite`.
+2. Open [docs/process/harness-implementation-checklist.md](./harness-implementation-checklist.md).
+3. If the change touches naming, also use [skills/core/define-domain-language/SKILL.md](../../skills/core/define-domain-language/SKILL.md).
+4. Run `npm run verify:all`.
+5. Run `npm run review:suite`.
 
 ### Flow D: explain the rules to another person
 
 1. Start with [docs/process/starter-guide.md](./starter-guide.md).
 2. Show [CLAUDE.md](../../CLAUDE.md) as the canon.
 3. Use [docs/process/skill-matrix.md](./skill-matrix.md) to explain what each skill is for.
+
+### Flow E: add a hosted provider safely
+
+1. Read [docs/process/infrastructure-continuity.md](./infrastructure-continuity.md).
+2. Read [docs/process/local-provider-checks.md](./local-provider-checks.md).
+3. Update [docs/process/harness-implementation-checklist.md](./harness-implementation-checklist.md) for the actual rollout.
+4. Add the smallest useful repo-local `npm run check:<provider>` command before wiring preview, browser, or E2E flows.
 
 ## Common commands
 
@@ -96,21 +106,26 @@ npm run db:prepare
 npm run verify:all
 npm run review:suite
 npm run cleanup:check
+npm run check:observability
+npm run check:preview -- --base-url http://127.0.0.1:3000
 npm run storybook
 ```
 
 ## Where to look when something is unclear
 
-| Need               | Open this first                                                           |
-| ------------------ | ------------------------------------------------------------------------- |
-| Full runtime rules | [CLAUDE.md](../../CLAUDE.md)                                              |
-| Project kickoff    | [docs/process/starting-a-new-project.md](./starting-a-new-project.md)     |
-| Validation rules   | [docs/process/boundary-validation.md](./boundary-validation.md)           |
-| Local debugging    | [docs/process/local-observability.md](./local-observability.md)           |
-| Current maturity   | [docs/process/quality-score.md](./quality-score.md)                       |
-| Known gaps         | [docs/process/tech-debt-tracker.md](./tech-debt-tracker.md)               |
-| Worktree usage     | [docs/process/parallel-agent-worktrees.md](./parallel-agent-worktrees.md) |
-| Skills             | [docs/process/skill-matrix.md](./skill-matrix.md)                         |
+| Need                          | Open this first                                                                           |
+| ----------------------------- | ----------------------------------------------------------------------------------------- |
+| Full runtime rules            | [CLAUDE.md](../../CLAUDE.md)                                                              |
+| Project kickoff               | [docs/process/starting-a-new-project.md](./starting-a-new-project.md)                     |
+| Validation rules              | [docs/process/boundary-validation.md](./boundary-validation.md)                           |
+| Implementation checklist      | [docs/process/harness-implementation-checklist.md](./harness-implementation-checklist.md) |
+| Local debugging               | [docs/process/local-observability.md](./local-observability.md)                           |
+| Hosted provider rollout       | [docs/process/local-provider-checks.md](./local-provider-checks.md)                       |
+| Deployment/account continuity | [docs/process/infrastructure-continuity.md](./infrastructure-continuity.md)               |
+| Current maturity              | [docs/process/quality-score.md](./quality-score.md)                                       |
+| Known gaps                    | [docs/process/tech-debt-tracker.md](./tech-debt-tracker.md)                               |
+| Worktree usage                | [docs/process/parallel-agent-worktrees.md](./parallel-agent-worktrees.md)                 |
+| Skills                        | [docs/process/skill-matrix.md](./skill-matrix.md)                                         |
 
 ## Handoff note for new teams
 

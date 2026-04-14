@@ -63,6 +63,19 @@ describe.sequential('worktree-harness acceptance', () => {
       expect(envContent).toContain('WORKTREE_TRACE_FILE=');
       expect(envContent).toContain('WORKTREE_METRICS_FILE=');
 
+      const manifestPath = path.join(
+        worktreeRoot,
+        'docs',
+        'temp',
+        'worktrees',
+        'agent.md',
+      );
+      const manifestContent = await readFile(manifestPath, 'utf8');
+      expect(createOutput).toContain(`manifest: ${manifestPath}`);
+      expect(manifestContent).toContain('# Worktree Task Manifest: agent');
+      expect(manifestContent).toContain('- branch: codex/agent');
+      expect(manifestContent).toContain(`- worktree: ${worktreeRoot}`);
+
       const listOutput = runHarness(repoRoot, ['list']);
       expect(listOutput).toContain('agent');
 
@@ -89,6 +102,7 @@ describe.sequential('worktree-harness acceptance', () => {
         name: 'agent',
         branch: 'codex/agent',
         path: worktreeRoot,
+        manifestPath,
         host: '127.0.0.1',
         envSource: '.env.example',
         observability: {
@@ -192,6 +206,7 @@ describe.sequential('worktree-harness acceptance', () => {
 
 async function createFixtureRepository(repoRoot: string) {
   await mkdir(path.join(repoRoot, 'node_modules', '.bin'), { recursive: true });
+  await mkdir(path.join(repoRoot, 'docs', 'templates'), { recursive: true });
   await writeFile(
     path.join(repoRoot, 'package.json'),
     JSON.stringify(
@@ -205,6 +220,49 @@ async function createFixtureRepository(repoRoot: string) {
     'utf8',
   );
   await writeFile(path.join(repoRoot, '.env.example'), 'FIXTURE="1"\n', 'utf8');
+  await writeFile(
+    path.join(repoRoot, 'docs', 'templates', 'WORKTREE_TASK_MANIFEST.md'),
+    `# Worktree Task Manifest: __TASK_ID__
+
+## Metadata
+
+- owner: __OWNER_NAME__
+- branch: __BRANCH_NAME__
+- worktree: __WORKTREE_PATH__
+- app url: __APP_URL__
+- storybook url: __STORYBOOK_URL__
+
+## Goal
+
+- 
+
+## Scope
+
+- 
+
+## Owned paths
+
+- 
+
+## Do not touch
+
+- 
+
+## Acceptance criteria
+
+- 
+
+## Verification
+
+- [ ] npm run typecheck
+- [ ] npm run test
+
+## Integration notes
+
+- 
+`,
+    'utf8',
+  );
   await writeFile(
     path.join(repoRoot, 'node_modules', 'fake-dev-server.mjs'),
     `import fs from 'node:fs';

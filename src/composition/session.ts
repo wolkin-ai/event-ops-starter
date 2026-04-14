@@ -2,14 +2,14 @@ import { ClearSessionUseCase } from '@/features/session/application/usecases/cle
 import { GetCurrentSessionUseCase } from '@/features/session/application/usecases/get-current-session-usecase';
 import { IssueSessionUseCase } from '@/features/session/application/usecases/issue-session-usecase';
 import type { SessionGateway } from '@/features/session/application/ports/session-gateway';
-import { CookieSessionGateway } from '@/features/session/infrastructure/adapters/cookie-session-gateway';
+import { AuthSessionGateway } from '@/features/session/infrastructure/adapters/auth-session-gateway';
 
 interface SessionServicesOptions {
   readonly gateway?: SessionGateway;
 }
 
 export function createSessionServices(options: SessionServicesOptions = {}) {
-  const gateway = options.gateway ?? new CookieSessionGateway();
+  const gateway = options.gateway ?? new AuthSessionGateway();
 
   return {
     getCurrentSession: new GetCurrentSessionUseCase(gateway),

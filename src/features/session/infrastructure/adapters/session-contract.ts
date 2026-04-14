@@ -36,7 +36,7 @@ export interface StoredSession extends Session {
   readonly issuedAt: string;
 }
 
-export function parseSession(session: Session): Session {
+export function parseSession(session: unknown): Session {
   return sessionSchema.parse(session);
 }
 

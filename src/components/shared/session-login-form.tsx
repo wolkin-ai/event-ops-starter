@@ -2,13 +2,9 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 import type { SessionRole } from '@/features/session/domain/entities/session';
-import {
-  readErrorMessage,
-  readJsonObject,
-  readRequiredString,
-} from '@/lib/http/client-response';
 
 interface SessionLoginFormProps {
   readonly defaultRole: SessionRole;
@@ -49,31 +45,36 @@ export function SessionLoginForm({
     setEmail(demoUsers[nextRole].email);
   }
 
+  function resolveRedirectPath(nextRole: SessionRole) {
+    if (
+      nextPath !== null &&
+      nextPath.startsWith('/') &&
+      !nextPath.startsWith('//')
+    ) {
+      return nextPath;
+    }
+
+    return nextRole === 'admin' ? '/admin' : '/dashboard';
+  }
+
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage('');
 
     startTransition(async () => {
-      const response = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          role,
-          nextPath,
-        }),
+      const result = await signIn('credentials', {
+        name,
+        email,
+        role,
+        redirect: false,
       });
-      const payload = await readJsonObject(response, 'Sign in failed.');
 
-      if (!response.ok) {
-        setErrorMessage(readErrorMessage(payload, 'Sign in failed.'));
+      if (typeof result.error === 'string') {
+        setErrorMessage('Sign in failed.');
         return;
       }
 
-      router.push(readRequiredString(payload, 'redirectTo', 'Sign in failed.'));
+      router.push(resolveRedirectPath(role));
       router.refresh();
     });
   }
@@ -84,8 +85,8 @@ export function SessionLoginForm({
         <p className="eyebrow">Demo sign-in</p>
         <h2 className="section-title">Create a session for the next route.</h2>
         <p className="body-copy">
-          Choose the role you want to test. The cookie is local to this starter
-          and can be overwritten by signing in again.
+          Choose the role you want to test. Auth.js will issue a JWT session and
+          overwrite the current role when you sign in again.
         </p>
       </div>
 

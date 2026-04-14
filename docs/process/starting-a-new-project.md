@@ -15,17 +15,19 @@ Do not copy these files into an already-running repository. That path usually br
 1. Create a new repository from this template repository.
 2. Clone it into a fresh folder.
 3. Review `docs/process/harness-engineering-gap-checklist.md` and mark the gaps that matter for the new product.
-4. Copy the current `quality-score` and `tech-debt-tracker` files so the new product starts with an explicit baseline.
-5. Rename the package, app name, product copy, and domain glossary.
-6. Keep `CLAUDE.md`, `docs/adr`, `skills/core`, `bin`, `scripts`, `.storybook`, and verification commands.
-7. Replace sample bounded contexts one by one instead of rewriting the whole tree at once.
-8. Add new ports only when the product boundary is clear and documented.
+4. Decide whether the first real milestone stays local-first or adopts hosted providers early. If hosted providers are involved, read `docs/process/infrastructure-continuity.md` and `docs/process/local-provider-checks.md` before wiring them in.
+5. Copy the current `quality-score` and `tech-debt-tracker` files so the new product starts with an explicit baseline.
+6. Rename the package, app name, product copy, and domain glossary.
+7. Keep `CLAUDE.md`, `docs/adr`, `docs/process`, `docs/templates`, `skills/core`, `bin`, `scripts`, `.storybook`, and verification commands.
+8. Replace sample bounded contexts one by one instead of rewriting the whole tree at once.
+9. Add new ports only when the product boundary is clear and documented.
 
 ## What to keep
 
 - AI workflow and review rules
 - Verification gates
 - Local-first development policy
+- Infrastructure continuity and provider-check playbooks
 - Skill registry and adapters
 - Composition-root pattern
 - Storybook and test harness

@@ -1586,6 +1586,7 @@ export type EventPlanCreateManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * The data used to create many EventPlans.
    */
   data: Prisma.EventPlanCreateManyInput | Prisma.EventPlanCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1604,6 +1605,7 @@ export type EventPlanCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Exten
    * The data used to create many EventPlans.
    */
   data: Prisma.EventPlanCreateManyInput | Prisma.EventPlanCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**

@@ -7,7 +7,9 @@ import {
 } from '@/features/session/infrastructure/adapters/session-contract';
 
 const SESSION_SECRET =
-  process.env.SESSION_SECRET ?? 'event-ops-starter-dev-session-secret';
+  process.env.AUTH_SECRET ??
+  process.env.SESSION_SECRET ??
+  'event-ops-starter-dev-session-secret';
 
 function toBase64Url(bytes: Uint8Array) {
   let binary = '';

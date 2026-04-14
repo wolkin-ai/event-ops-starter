@@ -520,6 +520,7 @@ export type RegistrationCreateOrConnectWithoutEventPlanInput = {
 
 export type RegistrationCreateManyEventPlanInputEnvelope = {
   data: Prisma.RegistrationCreateManyEventPlanInput | Prisma.RegistrationCreateManyEventPlanInput[]
+  skipDuplicates?: boolean
 }
 
 export type RegistrationUpsertWithWhereUniqueWithoutEventPlanInput = {
@@ -1338,6 +1339,7 @@ export type RegistrationCreateManyArgs<ExtArgs extends runtime.Types.Extensions.
    * The data used to create many Registrations.
    */
   data: Prisma.RegistrationCreateManyInput | Prisma.RegistrationCreateManyInput[]
+  skipDuplicates?: boolean
 }
 
 /**
@@ -1356,6 +1358,7 @@ export type RegistrationCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Ex
    * The data used to create many Registrations.
    */
   data: Prisma.RegistrationCreateManyInput | Prisma.RegistrationCreateManyInput[]
+  skipDuplicates?: boolean
   /**
    * Choose, which related nodes to fetch as well
    */

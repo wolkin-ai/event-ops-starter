@@ -15,6 +15,7 @@ For normal work, a single repository checkout is simpler.
 - one worktree per active slice
 - one branch per worktree
 - one agent owns one worktree at a time
+- one task manifest per active slice
 - branch names should use the `codex/` prefix when Codex creates them
 
 ## CLI workflow
@@ -35,6 +36,7 @@ For normal work, a single repository checkout is simpler.
 - creates a sibling worktree path like `../event-ops-starter-<name>`
 - creates a branch named `codex/<name>` unless overridden
 - generates `.env` from `.env` or `.env.example`
+- seeds `docs/temp/worktrees/<name>.md` from `docs/templates/WORKTREE_TASK_MANIFEST.md` when the template exists
 - runs local `npm install --no-fund --no-audit` in that worktree
 - runs `npm run db:prepare` unless `--skip-db-prepare` is passed
 - assigns app ports from `3001+` and Storybook ports from `6007+`
@@ -49,9 +51,40 @@ Pass `--host` only when the machine already has a bindable loopback alias or ano
 
 Some runtimes reject shared `node_modules` symlinks, and shared installs weaken worktree isolation when dependencies diverge by branch.
 
+## Task manifest discipline
+
+Each harness-managed worktree should keep a task manifest at `docs/temp/worktrees/<name>.md`.
+
+Use [docs/templates/WORKTREE_TASK_MANIFEST.md](../templates/WORKTREE_TASK_MANIFEST.md) as the coordination template. The initial file is created automatically by `./bin/worktree-harness create <name>` when the template exists.
+
+Fill these fields before editing shared files or asking another agent to continue:
+
+- `goal`
+- `scope`
+- `owned paths`
+- `do not touch`
+- `acceptance criteria`
+- `verification`
+- `integration notes`
+
+Treat the manifest as the coordination contract, not as optional notes.
+
+## Shared files default to serial
+
+Keep these paths out of parallel slices unless the task is explicitly coordinated as serial work:
+
+- `package.json`
+- `package-lock.json`
+- `prisma/schema.prisma`
+- `CLAUDE.md`
+- `docs/process/domain-glossary.md`
+- `skills/core/**`
+
 ## Minimum repo policy
 
 `npm run worktree:policy` checks only harness-managed worktrees recorded in `.git/codex-worktree-harness/state.json`.
+
+Task manifest discipline is still review-time coordination. The current policy does not parse or validate manifest contents yet.
 
 It fails when:
 
@@ -68,7 +101,7 @@ Manual `git worktree add` usage that is not recorded by the harness is still out
 
 ## Merge discipline
 
-1. Keep changes scoped to one slice.
+1. Keep changes scoped to one slice and keep the task manifest current.
 2. Run `npm run verify:all` in that worktree before merge.
 3. `verify:all` now includes `npm run worktree:check`, which runs both the ownership policy check and the harness lifecycle acceptance flow.
 4. Rebase or merge from `main` before opening the PR if another slice landed first.

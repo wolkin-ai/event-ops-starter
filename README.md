@@ -8,7 +8,7 @@ Event Ops Starter is a standalone Next.js starter for teams that need both a pub
 - Admin dashboard, event list, attendee list, event create flow, explicit publish/withdraw controls, publication copy editor
 - DDD/Clean Architecture skeleton with composition roots
 - Signed demo session boundary for `attendee` and `admin`
-- Prisma 7 + SQLite starter wiring with a generated local client
+- Prisma 7 + PostgreSQL starter wiring with a generated local client
 - `admin plan` と `public publication` を分けたローカル完結モデル
 - Storybook, Vitest, Playwright, dependency-cruiser
 - Project-local skills and Codex review wrappers
@@ -23,9 +23,9 @@ npm run skills:sync
 npm run verify:all
 ```
 
-外部サーバーは不要です。SQLite ファイルと demo session cookie だけで、ローカルで公開画面・管理画面・E2E まで確認できます。
+ローカルは `docker compose` で PostgreSQL を立ち上げ、Auth.js の demo role ログインで公開画面・管理画面・E2E を確認できます。
 
-Open `/login` to create a demo attendee or admin session before entering protected routes.
+Open `/login` to create a demo attendee or admin Auth.js session before entering protected routes.
 
 ## Use this as a template
 
@@ -68,9 +68,14 @@ npm run review:architecture -- src
 cp .env.example .env
 ```
 
-- `DATABASE_URL` defaults to `file:./dev.db`
-- `SESSION_SECRET` signs the demo session cookie
+- `DATABASE_URL` points to PostgreSQL locally and in hosted environments
+- `NEXT_PUBLIC_APP_URL` is used by browser-side preview and callback flows
+- `AUTH_SECRET` signs the Auth.js JWT session
+- `AUTH_URL` sets the canonical auth callback base URL
 - `LOG_LEVEL` controls structured local logging (`info` by default, `debug` when inspecting route behavior)
+
+デモ公開は `Vercel + hosted Postgres` の組み合わせを想定した手順を用意しています。
+詳しくは [docs/process/demo-deployment-vercel-postgres.md](./docs/process/demo-deployment-vercel-postgres.md) を参照してください。
 
 ## Local-first rules
 
